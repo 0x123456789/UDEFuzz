@@ -41,14 +41,18 @@
     <ClCompile Include="BackChannel.c" />
     <ClCompile Include="Device.c" />
     <ClCompile Include="Driver.c" />
+    <ClCompile Include="DriverInfo.c" />
     <ClCompile Include="Misc.c" />
     <ClCompile Include="USBCom.c" />
     <ClCompile Include="usbdevice.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AgentControl.h" />
     <ClInclude Include="BackChannel.h" />
     <ClInclude Include="Device.h" />
     <ClInclude Include="Driver.h" />
+    <ClInclude Include="DriverInfo.h" />
+    <ClInclude Include="KingstonFlash.h" />
     <ClInclude Include="Misc.h" />
     <ClInclude Include="Public.h" />
     <ClInclude Include="Trace.h" />
@@ -91,6 +95,7 @@
     <ConfigurationType>Driver</ConfigurationType>
     <DriverType>KMDF</DriverType>
     <DriverTargetPlatform>Universal</DriverTargetPlatform>
+    <SpectreMitigation>false</SpectreMitigation>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <TargetVersion>Windows10</TargetVersion>
@@ -148,6 +153,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
+    <Inf2CatUseLocalTime>true</Inf2CatUseLocalTime>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>

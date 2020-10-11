@@ -19,6 +19,7 @@ Environment:
 #include "Misc.h"
 #include "USBCom.h"
 #include "BackChannel.h"
+#include "AgentControl.h"
 
 #include <ntstrsafe.h>
 #include "device.tmh"
@@ -165,6 +166,16 @@ Return Value:
         LogError(TRACE_DEVICE, "WdfDeviceCreateDeviceInterface (backchannel) Failed %!STATUS!", status);
         goto exit;
     }
+
+    // Create interface for communication with agent
+	status = WdfDeviceCreateDeviceInterface(wdfDevice,
+		(LPGUID)&GUID_DEVINTERFACE_UDE_AGENTCHANNEL,
+		NULL);
+
+	if (!NT_SUCCESS(status)) {
+		LogError(TRACE_DEVICE, "WdfDeviceCreateDeviceInterface (AgentChannel) Failed %!STATUS!", status);
+		goto exit;
+	}
 
 	UDECX_WDF_DEVICE_CONFIG_INIT(&controllerConfig, ControllerEvtUdecxWdfDeviceQueryUsbCapability);
 
@@ -536,12 +547,14 @@ ControllerEvtIoDeviceControl(
     NTSTATUS status = STATUS_SUCCESS;
     WDFDEVICE ctrdevice = WdfIoQueueGetDevice(Queue);
 
-    
     UNREFERENCED_PARAMETER(OutputBufferLength);
 	UNREFERENCED_PARAMETER(InputBufferLength);
 
-	handled = UdecxWdfDeviceTryHandleUserIoctl(ctrdevice,
-		Request);
+	if (IoControlCode == USB_REQUEST_GET_DESCRIPTOR) {
+		LogInfo(TRACE_DEVICE, "Get USB_REQUEST_GET_DESCRIPTOR I/O control code 0x%x ", IoControlCode);
+	}
+	
+	handled = UdecxWdfDeviceTryHandleUserIoctl(ctrdevice, Request);
 
 	if (handled) {
 		goto exit;
@@ -557,7 +570,7 @@ ControllerEvtIoDeviceControl(
 
 	status = STATUS_INVALID_DEVICE_REQUEST;
 	LogError(TRACE_DEVICE, "Unexpected I/O control code 0x%x %!STATUS!", IoControlCode, status);
-	NT_ASSERTMSG("Unexpected I/O", FALSE);
+	//NT_ASSERTMSG("Unexpected I/O", FALSE);
 	WdfRequestComplete(Request, status);
 
 exit:

@@ -51,6 +51,15 @@
     <ClInclude Include="BackChannel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="AgentControl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DriverInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="KingstonFlash.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Device.c">
@@ -69,6 +78,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="BackChannel.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DriverInfo.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

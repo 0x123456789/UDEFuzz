@@ -66,6 +66,10 @@ Return Value:
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Entry");
 
+
+    DbgPrint("%p\n", DriverObject->MajorFunction[IRP_MJ_PNP]);
+    DbgPrint("%p\n", DriverObject->MajorFunction[IRP_MJ_CREATE]);
+
     //
     // Register a cleanup callback so that we can call WPP_CLEANUP when
     // the framework driver object is deleted during driver unload.
@@ -84,6 +88,11 @@ Return Value:
                              &config,
                              WDF_NO_HANDLE
                              );
+
+
+    DbgPrint("%p\n", DriverObject->MajorFunction[IRP_MJ_PNP]);
+    DbgPrint("%p\n", DriverObject->MajorFunction[IRP_MJ_CREATE]);
+
 
     if (!NT_SUCCESS(status)) {
         TraceEvents(TRACE_LEVEL_ERROR, TRACE_DRIVER, "WdfDriverCreate failed %!STATUS!", status);

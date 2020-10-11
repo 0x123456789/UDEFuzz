@@ -1,0 +1,7 @@
+/.vs/*
+AGENT/Debug/*
+AGENT/x64/*
+/UDEFX_host/.vs/*
+/UDEFX2/.vs/*
+/UDEFX2/Debug/*
+/UDEFX2/x64/*

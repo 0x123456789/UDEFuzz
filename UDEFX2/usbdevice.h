@@ -76,6 +76,9 @@ Usb_Initialize(
 	_In_ WDFDEVICE WdfControllerDevice
 );
 
+NTSTATUS Usb_CreateDeviceAndEndpoints(
+    _In_ WDFDEVICE WdfControllerDevice
+);
 
 NTSTATUS
 Usb_ReadDescriptorsAndPlugIn(

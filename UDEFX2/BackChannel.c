@@ -28,6 +28,8 @@ Kernel-mode Driver Framework
 #include "Misc.h"
 #include "USBCom.h"
 #include "BackChannel.h"
+#include "AgentControl.h"
+#include "DriverInfo.h"
 
 #include <ntstrsafe.h>
 #include "BackChannel.tmh"
@@ -215,6 +217,72 @@ BackChannelIoctl(
 
     switch (IoControlCode)
     {
+    case IOCTL_UNPLUG_USB_DEVICE:
+        status = Usb_Disconnect(ctrdevice);
+        if (!NT_SUCCESS(status)) {
+            TraceEvents(TRACE_LEVEL_ERROR,
+                TRACE_DEVICE,
+                "%!FUNC! Unable to disconect USB device");
+        }
+        else {
+            Usb_Destroy(ctrdevice);
+        }
+        WdfRequestComplete(Request, status);
+        handled = TRUE;
+        break;
+
+    case IOCTL_PLUG_USB_DEVICE:
+        LogInfo(TRACE_DEVICE, "ChildDevice: 0x%p", pControllerContext->ChildDevice);
+        LogInfo(TRACE_DEVICE, "ChildDeviceInit: 0x%p", pControllerContext->ChildDeviceInit);
+
+        status = Usb_Initialize(ctrdevice);
+        if (!NT_SUCCESS(status)) {
+            TraceEvents(TRACE_LEVEL_ERROR,
+                TRACE_DEVICE,
+                "%!FUNC! Unable to initialize USB device");
+            goto gg;
+        }
+        status = Usb_ReadDescriptorsAndPlugIn(ctrdevice);
+        if (!NT_SUCCESS(status)) {
+            TraceEvents(TRACE_LEVEL_ERROR,
+                TRACE_DEVICE,
+                "%!FUNC! Unable to plug-in USB device");
+        }
+       /* status = Usb_CreateDeviceAndEndpoints(ctrdevice);
+        if (!NT_SUCCESS(status)) {
+            TraceEvents(TRACE_LEVEL_ERROR,
+                TRACE_DEVICE,
+                "%!FUNC! Unable to create USB device");
+        }
+        else {
+            UDECX_USB_DEVICE_PLUG_IN_OPTIONS  pluginOptions;
+            UDECX_USB_DEVICE_PLUG_IN_OPTIONS_INIT(&pluginOptions);
+            pluginOptions.Usb20PortNumber = 1;
+            status = UdecxUsbDevicePlugIn(pControllerContext->ChildDevice, &pluginOptions);
+            if (!NT_SUCCESS(status)) {
+                TraceEvents(TRACE_LEVEL_ERROR,
+                    TRACE_DEVICE,
+                    "%!FUNC! Unable to create USB device");
+            }
+        }*/
+        gg:
+        WdfRequestComplete(Request, status);
+        handled = TRUE;
+        break;
+
+
+    case IOCTL_GET_DRIVER_INFO:
+        status = GetDriverByDriverObjectScan();
+        if (!NT_SUCCESS(status))
+        {
+            TraceEvents(TRACE_LEVEL_ERROR,
+                TRACE_DEVICE,
+                "%!FUNC! Unable to retrieve driver information");
+        }
+        WdfRequestComplete(Request, status);
+        handled = TRUE;
+        break;
+
     case IOCTL_UDEFX2_GENERATE_INTERRUPT:
         status = WdfRequestRetrieveInputBuffer(Request,
             sizeof(DEVICE_INTR_FLAGS),
