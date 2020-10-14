@@ -142,7 +142,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Drivers.cpp" />
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="main.c" />
     <ClCompile Include="Test.cpp" />
   </ItemGroup>
   <ItemGroup>

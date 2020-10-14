@@ -39,9 +39,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackChannel.c" />
+    <ClCompile Include="Default.c" />
+    <ClCompile Include="Descriptor.c" />
     <ClCompile Include="Device.c" />
     <ClCompile Include="Driver.c" />
     <ClCompile Include="DriverInfo.c" />
+    <ClCompile Include="Kingston.c" />
     <ClCompile Include="Misc.c" />
     <ClCompile Include="USBCom.c" />
     <ClCompile Include="usbdevice.c" />
@@ -49,10 +52,13 @@
   <ItemGroup>
     <ClInclude Include="AgentControl.h" />
     <ClInclude Include="BackChannel.h" />
+    <ClInclude Include="Descriptor.h" />
+    <ClInclude Include="Descriptors\Common.h" />
+    <ClInclude Include="Descriptors\Default.h" />
+    <ClInclude Include="Descriptors\KingstonFlash.h" />
     <ClInclude Include="Device.h" />
     <ClInclude Include="Driver.h" />
     <ClInclude Include="DriverInfo.h" />
-    <ClInclude Include="KingstonFlash.h" />
     <ClInclude Include="Misc.h" />
     <ClInclude Include="Public.h" />
     <ClInclude Include="Trace.h" />

@@ -17,6 +17,9 @@
       <UniqueIdentifier>{8E41214B-6785-4CFE-B992-037D68949A14}</UniqueIdentifier>
       <Extensions>inf;inv;inx;mof;mc;</Extensions>
     </Filter>
+    <Filter Include="Header Files\Descriptors">
+      <UniqueIdentifier>{b2085a03-4771-481c-b1df-b8b0f68f3f29}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="ReadMe.txt" />
@@ -57,8 +60,17 @@
     <ClInclude Include="DriverInfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="KingstonFlash.h">
+    <ClInclude Include="Descriptor.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Descriptors\Default.h">
+      <Filter>Header Files\Descriptors</Filter>
+    </ClInclude>
+    <ClInclude Include="Descriptors\KingstonFlash.h">
+      <Filter>Header Files\Descriptors</Filter>
+    </ClInclude>
+    <ClInclude Include="Descriptors\Common.h">
+      <Filter>Header Files\Descriptors</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -81,6 +93,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DriverInfo.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Kingston.c">
+      <Filter>Header Files\Descriptors</Filter>
+    </ClCompile>
+    <ClCompile Include="Default.c">
+      <Filter>Header Files\Descriptors</Filter>
+    </ClCompile>
+    <ClCompile Include="Descriptor.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

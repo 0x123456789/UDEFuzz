@@ -17,132 +17,45 @@ Abstract:
 #include "USBCom.h"
 #include "ucx/1.4/ucxobjects.h"
 #include "usbdevice.tmh"
+#include "Descriptor.h"
 
 
 
 #define UDECXMBIM_POOL_TAG 'UDEI'
 
 
-
-// START ------------------ descriptor -------------------------------
-
-
-DECLARE_CONST_UNICODE_STRING(g_ManufacturerStringEnUs, L"Microsoft");
-DECLARE_CONST_UNICODE_STRING(g_ProductStringEnUs, L"UDE Client");
-
-
-const USHORT AMERICAN_ENGLISH = 0x0409;
-
-
-const UCHAR g_LanguageDescriptor[] = {
-    4,                          // bLength
-    USB_STRING_DESCRIPTOR_TYPE, // bDescriptorType
-    0x09, 0x04,                 // bString
-};
-
-
-
-const UCHAR g_UsbDeviceDescriptor[18] =
-{
-    0x12,                            // Descriptor size
-    USB_DEVICE_DESCRIPTOR_TYPE,      // Device descriptor type
-    0x00, 0x02,                      // USB 2.0
-    0x00,                            // Device class (interface-class defined)
-    0x00,                            // Device subclass
-    0x00,                            // Device protocol
-    0x40,                            // Maxpacket size for EP0
-    UDEFX2_DEVICE_VENDOR_ID,         // Vendor ID
-    UDEFX2_DEVICE_PROD_ID,           // Product ID
-    0x00,                            // LSB of firmware revision
-    0x01,                            // MSB of firmware revision
-    0x01,                            // Manufacture string index [!]
-    0x02,                            // Product string index     [!]
-    0x00,                            // Serial number string index
-    0x01                             // Number of configurations
-};
-
-const UCHAR g_UsbConfigDescriptorSet[] =
-{
-    // Configuration Descriptor Type
-    0x9,                              // Descriptor Size
-    USB_CONFIGURATION_DESCRIPTOR_TYPE, // Configuration Descriptor Type
-    0x27, 0x00,                        // Length of this descriptor and all sub descriptors
-    0x1,                               // Number of interfaces
-    0x01,                              // Configuration number
-    0x00,                              // Configuration string index
-    0xA0,                              // Config characteristics - bus powered
-    0x32,                              // Max power consumption of device (in 2mA unit) : 0 ma
-
-        // Interface  descriptor
-        0x9,                                      // Descriptor size
-        USB_INTERFACE_DESCRIPTOR_TYPE,             // Interface Association Descriptor Type
-        0,                                        // bInterfaceNumber
-        0,                                        // bAlternateSetting
-        3,                                        // bNumEndpoints
-        0xFF,                                     // bInterfaceClass
-        0x00,                                     // bInterfaceSubClass
-        0x00,                                     // bInterfaceProtocol
-        0x00,                                     // iInterface
-
-        // Bulk Out Endpoint descriptor
-        0x07,                           // Descriptor size
-        USB_ENDPOINT_DESCRIPTOR_TYPE,   // bDescriptorType
-        g_BulkOutEndpointAddress,       // bEndpointAddress
-        USB_ENDPOINT_TYPE_BULK,         // bmAttributes - bulk
-        0x00, 0x2,                      // wMaxPacketSize
-        0x00,                           // bInterval
-
-        // Bulk IN endpoint descriptor
-        0x07,                           // Descriptor size 
-        USB_ENDPOINT_DESCRIPTOR_TYPE,   // Descriptor type
-        g_BulkInEndpointAddress,        // Endpoint address and description
-        USB_ENDPOINT_TYPE_BULK,         // bmAttributes - bulk
-        0x00, 0x02,                     // Max packet size
-        0x00,                           // Servicing interval for data transfers : NA for bulk
-
-        // Interrupt IN endpoint descriptor
-        0x07,                           // Descriptor size 
-        USB_ENDPOINT_DESCRIPTOR_TYPE,   // Descriptor type
-        g_InterruptEndpointAddress,     // Endpoint address and description
-        USB_ENDPOINT_TYPE_INTERRUPT,    // bmAttributes - interrupt
-        0x40, 0x0,                      // Max packet size = 64
-        0x01                            // Servicing interval for interrupt (1ms/1 frame)
-};
-
-
-
+////
+//// Generic descriptor asserts
+////
+//static
+//FORCEINLINE
+//VOID
+//UsbValidateConstants(
+//)
+//{
+//    //
+//    // C_ASSERT doesn't treat these expressions as constant, so use NT_ASSERT
+//    //
+//    NT_ASSERT(((PUSB_STRING_DESCRIPTOR)g_LanguageDescriptor)->bString[0] == AMERICAN_ENGLISH);
+//    //NT_ASSERT(((PUSB_STRING_DESCRIPTOR)g_LanguageDescriptor)->bString[1] == PRC_CHINESE);
+//    NT_ASSERT(((PUSB_DEVICE_DESCRIPTOR)g_UsbDeviceDescriptor)->iManufacturer == g_ManufacturerIndex);
+//    NT_ASSERT(((PUSB_DEVICE_DESCRIPTOR)g_UsbDeviceDescriptor)->iProduct == g_ProductIndex);
 //
-// Generic descriptor asserts
+//    NT_ASSERT(((PUSB_DEVICE_DESCRIPTOR)g_UsbDeviceDescriptor)->bLength ==
+//        sizeof(USB_DEVICE_DESCRIPTOR));
+//    NT_ASSERT(sizeof(g_UsbDeviceDescriptor) == sizeof(USB_DEVICE_DESCRIPTOR));
+//    NT_ASSERT(((PUSB_CONFIGURATION_DESCRIPTOR)g_UsbConfigDescriptorSet)->wTotalLength ==
+//        sizeof(g_UsbConfigDescriptorSet));
+//    NT_ASSERT(((PUSB_STRING_DESCRIPTOR)g_LanguageDescriptor)->bLength ==
+//        sizeof(g_LanguageDescriptor));
 //
-static
-FORCEINLINE
-VOID
-UsbValidateConstants(
-)
-{
-    //
-    // C_ASSERT doesn't treat these expressions as constant, so use NT_ASSERT
-    //
-    NT_ASSERT(((PUSB_STRING_DESCRIPTOR)g_LanguageDescriptor)->bString[0] == AMERICAN_ENGLISH);
-    //NT_ASSERT(((PUSB_STRING_DESCRIPTOR)g_LanguageDescriptor)->bString[1] == PRC_CHINESE);
-    NT_ASSERT(((PUSB_DEVICE_DESCRIPTOR)g_UsbDeviceDescriptor)->iManufacturer == g_ManufacturerIndex);
-    NT_ASSERT(((PUSB_DEVICE_DESCRIPTOR)g_UsbDeviceDescriptor)->iProduct == g_ProductIndex);
-
-    NT_ASSERT(((PUSB_DEVICE_DESCRIPTOR)g_UsbDeviceDescriptor)->bLength ==
-        sizeof(USB_DEVICE_DESCRIPTOR));
-    NT_ASSERT(sizeof(g_UsbDeviceDescriptor) == sizeof(USB_DEVICE_DESCRIPTOR));
-    NT_ASSERT(((PUSB_CONFIGURATION_DESCRIPTOR)g_UsbConfigDescriptorSet)->wTotalLength ==
-        sizeof(g_UsbConfigDescriptorSet));
-    NT_ASSERT(((PUSB_STRING_DESCRIPTOR)g_LanguageDescriptor)->bLength ==
-        sizeof(g_LanguageDescriptor));
-
-    NT_ASSERT(((PUSB_DEVICE_DESCRIPTOR)g_UsbDeviceDescriptor)->bDescriptorType ==
-        USB_DEVICE_DESCRIPTOR_TYPE);
-    NT_ASSERT(((PUSB_CONFIGURATION_DESCRIPTOR)g_UsbConfigDescriptorSet)->bDescriptorType ==
-        USB_CONFIGURATION_DESCRIPTOR_TYPE);
-    NT_ASSERT(((PUSB_STRING_DESCRIPTOR)g_LanguageDescriptor)->bDescriptorType ==
-        USB_STRING_DESCRIPTOR_TYPE);
-}
+//    NT_ASSERT(((PUSB_DEVICE_DESCRIPTOR)g_UsbDeviceDescriptor)->bDescriptorType ==
+//        USB_DEVICE_DESCRIPTOR_TYPE);
+//    NT_ASSERT(((PUSB_CONFIGURATION_DESCRIPTOR)g_UsbConfigDescriptorSet)->bDescriptorType ==
+//        USB_CONFIGURATION_DESCRIPTOR_TYPE);
+//    NT_ASSERT(((PUSB_STRING_DESCRIPTOR)g_LanguageDescriptor)->bDescriptorType ==
+//        USB_STRING_DESCRIPTOR_TYPE);
+//}
 
 
 // END ------------------ descriptor -------------------------------
@@ -151,7 +64,11 @@ UsbValidateConstants(
 
 NTSTATUS
 Usb_Initialize(
-    _In_ WDFDEVICE WdfDevice
+    _In_ WDFDEVICE WdfDevice,
+    _In_ PUCHAR UsbDeviceDescriptor,
+    _In_ USHORT UsbDeviceDescriptorLen,
+    _In_ PUCHAR UsbConfigDescriptor,
+    _In_ USHORT UsbConfigDescriptorLen
 )
 {
     NTSTATUS                                    status;
@@ -170,7 +87,7 @@ Usb_Initialize(
 
     controllerContext = GetUsbControllerContext(WdfDevice);
 
-    UsbValidateConstants();
+    //UsbValidateConstants();
 
     controllerContext->ChildDeviceInit = UdecxUsbDeviceInitAllocate(WdfDevice);
 
@@ -202,9 +119,11 @@ Usb_Initialize(
     //
     // Device descriptor
     //
-    status = UdecxUsbDeviceInitAddDescriptor(controllerContext->ChildDeviceInit,
-        (PUCHAR)g_UsbDeviceDescriptor,
-        sizeof(g_UsbDeviceDescriptor));
+
+    status = UdecxUsbDeviceInitAddDescriptor(
+        controllerContext->ChildDeviceInit,
+        UsbDeviceDescriptor,
+        UsbDeviceDescriptorLen);
 
     if (!NT_SUCCESS(status)) {
         goto exit;
@@ -253,23 +172,22 @@ Usb_Initialize(
     //
 
     pComputedConfigDescSet = (PUSB_CONFIGURATION_DESCRIPTOR)
-        ExAllocatePoolWithTag(NonPagedPoolNx, sizeof(g_UsbConfigDescriptorSet), UDECXMBIM_POOL_TAG);
+        ExAllocatePoolWithTag(NonPagedPoolNx, UsbConfigDescriptorLen, UDECXMBIM_POOL_TAG);
 
     if (pComputedConfigDescSet == NULL) {
-
         status = STATUS_INSUFFICIENT_RESOURCES;
         LogError(TRACE_DEVICE, "Failed to allocate %d bytes for temporary config descriptor %!STATUS!",
-            sizeof(g_UsbConfigDescriptorSet), status);
+            UsbConfigDescriptorLen, status);
         goto exit;
     }
 
     RtlCopyMemory(pComputedConfigDescSet,
-        g_UsbConfigDescriptorSet,
-        sizeof(g_UsbConfigDescriptorSet));
+        UsbConfigDescriptor,
+        UsbConfigDescriptorLen);
 
     status = UdecxUsbDeviceInitAddDescriptor(controllerContext->ChildDeviceInit,
         (PUCHAR)pComputedConfigDescSet,
-        sizeof(g_UsbConfigDescriptorSet));
+        UsbConfigDescriptorLen);
 
     if (!NT_SUCCESS(status)) {
         LogError(TRACE_DEVICE, "Failed to add configuration descriptor %!STATUS!", status);
@@ -381,7 +299,7 @@ exit:
 
 
 NTSTATUS
-Usb_ReadDescriptorsAndPlugIn(
+Usb_CreateEndpointsAndPlugIn(
     _In_ WDFDEVICE WdfControllerDevice
 )
 {

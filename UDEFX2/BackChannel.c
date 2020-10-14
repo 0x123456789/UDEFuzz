@@ -30,6 +30,7 @@ Kernel-mode Driver Framework
 #include "BackChannel.h"
 #include "AgentControl.h"
 #include "DriverInfo.h"
+#include "Descriptor.h"
 
 #include <ntstrsafe.h>
 #include "BackChannel.tmh"
@@ -235,14 +236,21 @@ BackChannelIoctl(
         LogInfo(TRACE_DEVICE, "ChildDevice: 0x%p", pControllerContext->ChildDevice);
         LogInfo(TRACE_DEVICE, "ChildDeviceInit: 0x%p", pControllerContext->ChildDeviceInit);
 
-        status = Usb_Initialize(ctrdevice);
+        DESCRIPTOR_POOL pool = GetDescriptorPool();
+
+        status = Usb_Initialize(ctrdevice,
+            pool.Descriptors[DEFAULT_DESCRIPTOR_SET].Device.Descriptor,
+            pool.Descriptors[DEFAULT_DESCRIPTOR_SET].Device.Length,
+            pool.Descriptors[DEFAULT_DESCRIPTOR_SET].Configuration.Descriptor,
+            pool.Descriptors[DEFAULT_DESCRIPTOR_SET].Configuration.Length);
+
         if (!NT_SUCCESS(status)) {
             TraceEvents(TRACE_LEVEL_ERROR,
                 TRACE_DEVICE,
                 "%!FUNC! Unable to initialize USB device");
             goto gg;
         }
-        status = Usb_ReadDescriptorsAndPlugIn(ctrdevice);
+        status = Usb_CreateEndpointsAndPlugIn(ctrdevice);
         if (!NT_SUCCESS(status)) {
             TraceEvents(TRACE_LEVEL_ERROR,
                 TRACE_DEVICE,

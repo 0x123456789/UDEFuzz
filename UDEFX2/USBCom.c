@@ -18,6 +18,7 @@ Abstract:
 #include "BackChannel.h"
 #include "ucx/1.4/ucxobjects.h"
 #include "USBCom.tmh"
+#include "Descriptor.h"
 
 
 

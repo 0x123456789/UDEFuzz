@@ -1,10 +1,4 @@
-#pragma once
-
-#include <ntddk.h>
-#include <wdf.h>
-#include <usb.h>
-#include <usbdlib.h>
-
+#include "Descriptors/KingstonFlash.h"
 
 #define KINGSTON_DEVICE_VENDOR_ID  0x51, 0x09 // little endian
 #define KINGSTON_DEVICE_PROD_ID    0x66, 0x16 // little endian
@@ -24,7 +18,7 @@ DECLARE_CONST_UNICODE_STRING(g_KingstonProductStringEnUs, L"DataTraveler 3.0");
 
 // ----------------------------------------------------------------------------------------------------------------------------------
 
-const UCHAR g_UsbDeviceDescriptor[18] =
+const UCHAR g_KingstonUsbDeviceDescriptor[18] =
 {
     0x12,                            // Descriptor size
     USB_DEVICE_DESCRIPTOR_TYPE,      // Device descriptor type
@@ -43,10 +37,10 @@ const UCHAR g_UsbDeviceDescriptor[18] =
     0x01                             // Number of configurations
 };
 
-const UCHAR g_UsbConfigDescriptorSet[] =
+const UCHAR g_KingstonUsbConfigDescriptorSet[] =
 {
     // Configuration Descriptor Type
-    0x9,                              // Descriptor Size
+    0x9,                               // Descriptor Size
     USB_CONFIGURATION_DESCRIPTOR_TYPE, // Configuration Descriptor Type
     0x2C, 0x00,                        // Length of this descriptor and all sub descriptors
     0x01,                              // Number of interfaces
@@ -81,7 +75,7 @@ const UCHAR g_UsbConfigDescriptorSet[] =
         USB_ENDPOINT_TYPE_CONTROL,                              // bmAttributes (in usbview 0x00, but I don't sure that it's for control, but USB_ENDPOINT_TYPE_CONTROL == 0x00)
         0x00, 0x00,                                             // wBytesPerInterval
 
-        
+
         // Bulk OUT Endpoint descriptor
         0x07,                           // Descriptor size
         USB_ENDPOINT_DESCRIPTOR_TYPE,   // bDescriptorType
@@ -119,3 +113,17 @@ const UCHAR g_UsbConfigDescriptorSet[] =
         0x0A,                                   // wU1DevExitLat (less than 10 micro-seconds)
         0xFF, 0x07,                             // wU2DevExitLat (less than 2047 micro-seconds)
 };
+
+
+DESCRIPTORS GetKingstonDevDescriptors() {
+
+    DESCRIPTORS d;
+
+    d.Device.Descriptor = (PUCHAR)g_KingstonUsbDeviceDescriptor;
+    d.Device.Length = sizeof(g_KingstonUsbDeviceDescriptor);
+
+    d.Configuration.Descriptor = (PUCHAR)g_KingstonUsbConfigDescriptorSet;
+    d.Configuration.Length = sizeof(g_KingstonUsbConfigDescriptorSet);
+    return d;
+}
+

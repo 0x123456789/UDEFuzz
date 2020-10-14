@@ -20,6 +20,7 @@ Environment:
 #include "USBCom.h"
 #include "BackChannel.h"
 #include "AgentControl.h"
+#include "Descriptor.h"
 
 #include <ntstrsafe.h>
 #include "device.tmh"
@@ -50,18 +51,17 @@ Return Value:
 
 --*/
 {
-	NTSTATUS                            status;
-	WDFDEVICE                           wdfDevice;
-	WDF_PNPPOWER_EVENT_CALLBACKS        wdfPnpPowerCallbacks;
-	WDF_OBJECT_ATTRIBUTES               wdfDeviceAttributes;
-	WDF_OBJECT_ATTRIBUTES               wdfRequestAttributes;
-	UDECX_WDF_DEVICE_CONFIG             controllerConfig;
-	WDF_FILEOBJECT_CONFIG               fileConfig;
-    PUDECX_USBCONTROLLER_CONTEXT        pControllerContext;
-	WDF_IO_QUEUE_CONFIG                 defaultQueueConfig;
-	WDF_DEVICE_POWER_POLICY_IDLE_SETTINGS
-		idleSettings;
-	UNICODE_STRING                      refString;
+	NTSTATUS								status;
+	WDFDEVICE								wdfDevice;
+	WDF_PNPPOWER_EVENT_CALLBACKS			wdfPnpPowerCallbacks;
+	WDF_OBJECT_ATTRIBUTES					wdfDeviceAttributes;
+	WDF_OBJECT_ATTRIBUTES					wdfRequestAttributes;
+	UDECX_WDF_DEVICE_CONFIG					controllerConfig;
+	WDF_FILEOBJECT_CONFIG					fileConfig;
+    PUDECX_USBCONTROLLER_CONTEXT			pControllerContext;
+	WDF_IO_QUEUE_CONFIG						defaultQueueConfig;
+	WDF_DEVICE_POWER_POLICY_IDLE_SETTINGS	idleSettings;
+	UNICODE_STRING							refString;
 
 	FuncEntry(TRACE_DEVICE);
 
@@ -228,7 +228,13 @@ Return Value:
 	//
 	// Initialize virtual USB device software objects.
 	//
-	status = Usb_Initialize(wdfDevice);
+	DESCRIPTOR_POOL pool = GetDescriptorPool();
+
+	status = Usb_Initialize(wdfDevice,
+		pool.Descriptors[DEFAULT_DESCRIPTOR_SET].Device.Descriptor,
+		pool.Descriptors[DEFAULT_DESCRIPTOR_SET].Device.Length,
+		pool.Descriptors[DEFAULT_DESCRIPTOR_SET].Configuration.Descriptor,
+		pool.Descriptors[DEFAULT_DESCRIPTOR_SET].Configuration.Length);
 
 	if (!NT_SUCCESS(status)) {
 
@@ -437,7 +443,7 @@ ControllerWdfEvtDeviceD0Entry(
 		NT_ASSERT(!pControllerContext->AllowOnlyResetInterrupts);
 		pControllerContext->AllowOnlyResetInterrupts = TRUE;
 
-		status = Usb_ReadDescriptorsAndPlugIn(WdfDevice);
+		status = Usb_CreateEndpointsAndPlugIn(WdfDevice);
 
 		if (!NT_SUCCESS(status)) {
 

@@ -41,39 +41,16 @@ WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(USB_CONTEXT, GetUsbDeviceContext);
 
 
 
-
-
-
-
-
-// ----- descriptor constants/strings/indexes
-#define g_ManufacturerIndex   1
-#define g_ProductIndex        2
-#define g_BulkOutEndpointAddress 2
-#define g_BulkInEndpointAddress    0x84
-#define g_InterruptEndpointAddress 0x86
-
-
-#define UDEFX2_DEVICE_VENDOR_ID  0x9, 0x12 // little endian
-#define UDEFX2_DEVICE_PROD_ID    0x87, 0x8 // little endian
-
-extern const UCHAR g_UsbDeviceDescriptor[];
-extern const UCHAR g_UsbConfigDescriptorSet[];
-
-// ------------------------------------------------
-
-
-
-
-
-
-
 EXTERN_C_START
 
 
 NTSTATUS
 Usb_Initialize(
-	_In_ WDFDEVICE WdfControllerDevice
+    _In_ WDFDEVICE WdfDevice,
+    _In_ PUCHAR UsbDeviceDescriptor,
+    _In_ USHORT UsbDeviceDescriptorLen,
+    _In_ PUCHAR UsbConfigDescriptor,
+    _In_ USHORT UsbConfigDescriptorLen
 );
 
 NTSTATUS Usb_CreateDeviceAndEndpoints(
@@ -81,7 +58,7 @@ NTSTATUS Usb_CreateDeviceAndEndpoints(
 );
 
 NTSTATUS
-Usb_ReadDescriptorsAndPlugIn(
+Usb_CreateEndpointsAndPlugIn(
 	_In_ WDFDEVICE WdfControllerDevice
 );
 
