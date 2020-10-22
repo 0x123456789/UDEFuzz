@@ -111,7 +111,9 @@ void UnplugUSBDevice(LPGUID interfaceGuid) {
 }
 
 
-void PlugInUSBDevice(LPGUID interfaceGuid) {
+void PlugInUSBDevice(LPGUID interfaceGuid, USHORT deviceCode) {
+    wprintf(L"[*] Selected device code: %d\n", deviceCode);
+
     DWORD bytesReturned = 0;
     PZZWSTR devices = GetPresentDeviceList(interfaceGuid);
     // unplug open first device of the list
@@ -121,8 +123,8 @@ void PlugInUSBDevice(LPGUID interfaceGuid) {
         if (handle != INVALID_HANDLE_VALUE) {
             if (!DeviceIoControl(handle,
                 IOCTL_PLUG_USB_DEVICE,
-                NULL,                  // Ptr to InBuffer
-                0,                     // Length of InBuffer
+                &deviceCode,           // Ptr to InBuffer
+                sizeof(deviceCode),    // Length of InBuffer
                 NULL,                  // Ptr to OutBuffer
                 0,                     // Length of OutBuffer
                 &bytesReturned,        // BytesReturned
@@ -237,16 +239,72 @@ void GetDriverInfo(LPGUID interfaceGuid) {
 //    }
 //}
 
+
+void 
+WriteTextTo(LPCGUID interfaceGuid)
+{
+    HANDLE deviceHandle;
+    DWORD  nBytesWrite = 0;
+    BOOL   success;
+    const char* pText = "0x12345";
+
+    PZZWSTR devices = GetPresentDeviceList(interfaceGuid);
+    // unplug open first device of the list
+    if (*devices != UNICODE_NULL) {
+
+        deviceHandle = OpenDevice(devices);
+        
+        if (deviceHandle == INVALID_HANDLE_VALUE) {
+            wprintf(L"Unable to find device!\n");
+            fflush(stdout);
+            return;
+        }
+
+        wprintf(L"Device open, will write...\n"); fflush(stdout);
+
+        success = WriteFile(deviceHandle, pText, (DWORD)(strlen(pText) + 1), &nBytesWrite, NULL);
+        if (!success) {
+            wprintf(L"WriteFile failed - error %d\n", GetLastError());
+        }
+        else {
+            printf("WriteFile SUCCESS, text=%s, bytes=%d\n", pText, nBytesWrite);
+        }
+        CloseHandle(deviceHandle);
+        return;
+    }
+    return;
+}
+
+
+USHORT ToDeviceCode(WCHAR number) {
+    if (number == L'\0') {
+        return 0;
+    }
+
+    USHORT n = number - L'0';
+    if (n > 9) {
+        wprintf(L"Bad device code: %d. Should be from 0 to 9", n);
+        exit(-1);
+    }
+    return n;
+}
+
+
+DEFINE_GUID(GUID_DEVINTERFACE_HOSTUDE,
+    0x5ad9d323, 0xc478, 0x4ad2, 0xb6, 0x39, 0x9d, 0x2e, 0xdd, 0xbd, 0x3b, 0x2c);
+
 int wmain(int argc, wchar_t* argv[]) {
     // using this guid we can communicate with our driver via CreateFile for getting handle
-    LPGUID deviceGUID = (LPGUID)&GUID_DEVINTERFACE_UDE_AGENTCHANNEL;
+    LPGUID deviceGUID = (LPGUID)&GUID_DEVINTERFACE_UDE_BACKCHANNEL;
 
     for (size_t optind = 1; optind < argc && argv[optind][0] == '-'; optind++) {
         switch (argv[optind][1]) {
         case L'e': EnumerateDevices(deviceGUID); break;
         case L'u': UnplugUSBDevice(deviceGUID); break;
-        case L'p': PlugInUSBDevice(deviceGUID); break;
+        case L'p': PlugInUSBDevice(deviceGUID, ToDeviceCode(argv[optind][2])); break;
         case L'i': GetDriverInfo(deviceGUID); break;
+        case L'w': WriteTextTo((LPGUID)&GUID_DEVINTERFACE_HOSTUDE); break;
+
             /*case 'l': mode = LINE_MODE; break;
             case 'w': mode = WORD_MODE; break;*/
         default:

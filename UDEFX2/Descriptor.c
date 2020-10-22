@@ -6,6 +6,7 @@ DESCRIPTOR_POOL GetDescriptorPool() {
 
 	p.Descriptors[DEFAULT_DESCRIPTOR_SET] = GetDefaultDevDescriptors();
 	p.Descriptors[KINGSTON_DESCRIPTOR_SET] = GetKingstonDevDescriptors();
-	p.Size = 2;
+	p.Descriptors[FLASH_20_DESCRIPTOR_SET] = GetFlash20DevDescriptors();
+	p.Size = 3;
 	return p;
 }

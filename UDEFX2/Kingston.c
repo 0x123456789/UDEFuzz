@@ -22,7 +22,7 @@ const UCHAR g_KingstonUsbDeviceDescriptor[18] =
 {
     0x12,                            // Descriptor size
     USB_DEVICE_DESCRIPTOR_TYPE,      // Device descriptor type
-    0x01, 0x03,                      // USB 3.1
+    0x00, 0x03,                      // USB 3.1
     0x00,                            // Device class (interface-class defined)
     0x00,                            // Device subclass
     0x00,                            // Device protocol
@@ -91,27 +91,27 @@ const UCHAR g_KingstonUsbConfigDescriptorSet[] =
         USB_ENDPOINT_TYPE_CONTROL,                              // bmAttributes (in usbview 0x00, but I don't sure that it's for control, but USB_ENDPOINT_TYPE_CONTROL == 0x00)
         0x00, 0x00,
 
-        // BOS Descriptor
-        0x05,                       // bLength
-        USB_BOS_DESCRIPTOR_TYPE,    // bDescriptorType
-        0x16, 0x00,                 // wTotalLength
-        0x02,                       // bNumDeviceCaps
+        //// BOS Descriptor
+        //0x05,                       // bLength
+        //USB_BOS_DESCRIPTOR_TYPE,    // bDescriptorType
+        //0x16, 0x00,                 // wTotalLength
+        //0x02,                       // bNumDeviceCaps
 
-        // USB 2.0 extension descriptor
-        0x07,                                   // bLength
-        USB_DEVICE_CAPABILITY_DESCRIPTOR_TYPE,  // bDescriptorType
-        USB_DEVICE_CAPABILITY_USB20_EXTENSION,  // bDevCapabilityType
-        0x06, 0x00, 0x00, 0x00,                 // bmAttributes
+        //// USB 2.0 extension descriptor
+        //0x07,                                   // bLength
+        //USB_DEVICE_CAPABILITY_DESCRIPTOR_TYPE,  // bDescriptorType
+        //USB_DEVICE_CAPABILITY_USB20_EXTENSION,  // bDevCapabilityType
+        //0x06, 0x00, 0x00, 0x00,                 // bmAttributes
 
-        // SuperSpeed USB Device Capability Descriptor
-        0x0A,                                   // bLength
-        USB_DEVICE_CAPABILITY_DESCRIPTOR_TYPE,  // bDescriptorType
-        USB_DEVICE_CAPABILITY_SUPERSPEED_USB,   // bDevCapabilityType
-        0x00,                                   // bmAttributes
-        0x0E,                                   // wSpeedsSupported
-        0x02,                                   // bFunctionalitySupport (lower speed - high speed)
-        0x0A,                                   // wU1DevExitLat (less than 10 micro-seconds)
-        0xFF, 0x07,                             // wU2DevExitLat (less than 2047 micro-seconds)
+        //// SuperSpeed USB Device Capability Descriptor
+        //0x0A,                                   // bLength
+        //USB_DEVICE_CAPABILITY_DESCRIPTOR_TYPE,  // bDescriptorType
+        //USB_DEVICE_CAPABILITY_SUPERSPEED_USB,   // bDevCapabilityType
+        //0x00,                                   // bmAttributes
+        //0x0E,                                   // wSpeedsSupported
+        //0x02,                                   // bFunctionalitySupport (lower speed - high speed)
+        //0x0A,                                   // wU1DevExitLat (less than 10 micro-seconds)
+        //0xFF, 0x07,                             // wU2DevExitLat (less than 2047 micro-seconds)
 };
 
 

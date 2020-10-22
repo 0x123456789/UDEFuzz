@@ -72,6 +72,9 @@
     <ClInclude Include="Descriptors\Common.h">
       <Filter>Header Files\Descriptors</Filter>
     </ClInclude>
+    <ClInclude Include="Descriptors\Flash20.h">
+      <Filter>Header Files\Descriptors</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Device.c">
@@ -103,6 +106,9 @@
     </ClCompile>
     <ClCompile Include="Descriptor.c">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Descriptors\Flash20.c">
+      <Filter>Header Files\Descriptors</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

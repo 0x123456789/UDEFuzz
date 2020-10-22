@@ -25,6 +25,7 @@ _WQQCancelRequest(
 )
 {
     UNREFERENCED_PARAMETER(Queue);
+    LogInfo(TRACE_DEVICE, "[_WQQCancelRequest] Canceling request %p", Request);
     WdfRequestComplete(Request, STATUS_CANCELLED);
 }
 
@@ -36,7 +37,7 @@ _WQQCancelUSBRequest(
 )
 {
     UNREFERENCED_PARAMETER(Queue);
-    LogInfo(TRACE_DEVICE, "Canceling request %p", Request);
+    LogInfo(TRACE_DEVICE, "[_WQQCancelUSBRequest] Canceling request %p", Request);
     UdecxUrbCompleteWithNtStatus(Request, STATUS_CANCELLED);
 }
 
@@ -118,7 +119,9 @@ WRQueueDestroy(
     pQ->qsync = NULL;
 }
 
-
+// запихиваем в очередь данные на "Запись" которые пришли от контроллера
+// если есть запрос на чтение этих данных, то возвращаем данный запрос и в очередь 
+// данные на запись не добавляем (почему?)
 NTSTATUS
 WRQueuePushWrite(
     _In_ PWRITE_BUFFER_TO_READ_REQUEST_QUEUE pQ,

@@ -209,6 +209,8 @@ Return Value:
 	WDF_IO_QUEUE_CONFIG_INIT_DEFAULT_QUEUE(&defaultQueueConfig, WdfIoQueueDispatchSequential);
 	defaultQueueConfig.EvtIoDeviceControl = ControllerEvtIoDeviceControl;
     defaultQueueConfig.EvtIoRead = BackChannelEvtRead;
+
+	// callback function receives every write request from the queue
     defaultQueueConfig.EvtIoWrite = BackChannelEvtWrite;
     defaultQueueConfig.PowerManaged = WdfFalse;
 
@@ -237,7 +239,6 @@ Return Value:
 		pool.Descriptors[DEFAULT_DESCRIPTOR_SET].Configuration.Length);
 
 	if (!NT_SUCCESS(status)) {
-
 		goto exit;
 	}
 
@@ -608,7 +609,18 @@ ControllerEvtUdecxWdfDeviceQueryUsbCapability(
 		sizeof(GUID)
 	) == sizeof(GUID))
 	{
+		LogInfo(TRACE_DEVICE, "GUID_USB_CAPABILITY_DEVICE_CONNECTION_HIGH_SPEED_COMPATIBLE");
 		return STATUS_SUCCESS;
 	}
+	if (RtlCompareMemory(
+		CapabilityType,
+		&GUID_USB_CAPABILITY_DEVICE_CONNECTION_SUPER_SPEED_COMPATIBLE,
+		sizeof(GUID)
+	) == sizeof(GUID))
+	{
+		LogInfo(TRACE_DEVICE, "GUID_USB_CAPABILITY_DEVICE_CONNECTION_SUPER_SPEED_COMPATIBLE");
+		return STATUS_SUCCESS;
+	}
+
 	return STATUS_UNSUCCESSFUL;
 }

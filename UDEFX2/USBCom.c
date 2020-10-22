@@ -118,9 +118,6 @@ IoEvtControlUrb(
             (int)(setupPacket.Packet.wLength)
         );
 
-
-
-
         UdecxUrbCompleteWithNtStatus(Request, STATUS_SUCCESS);
     }
     else
@@ -293,7 +290,7 @@ IoEvtCancelInterruptInUrb(
 )
 {
     UNREFERENCED_PARAMETER(Queue);
-    LogInfo(TRACE_DEVICE, "Canceling request %p", Request);
+    LogInfo(TRACE_DEVICE, "[IoEvtCancelInterruptInUrb] Canceling request %p", Request);
     UdecxUrbCompleteWithNtStatus(Request, STATUS_CANCELLED);
 }
 
@@ -367,6 +364,7 @@ Io_RaiseInterrupt(
         WdfSpinLockRelease(pIoContext->IntrState.sync);
 
         UdecxUsbDeviceSignalWake(Device);
+        LogWarning(TRACE_DEVICE, "[!] For USB 3.0 need may be need UdecxUsbDeviceSignalFunctionWake?");
         status = STATUS_SUCCESS;
     } else {
         IoCompletePendingRequest(request, LatestStatus);
@@ -588,6 +586,7 @@ Io_RetrieveEpQueue(
     }
 
     if ( (*pQueueRecord)  == NULL) {
+
         PENDPOINTQUEUE_CONTEXT pEPQContext;
         WDF_IO_QUEUE_CONFIG_INIT(&queueConfig, WdfIoQueueDispatchSequential);
 
@@ -605,7 +604,6 @@ Io_RetrieveEpQueue(
         pEPQContext->backChannelDevice = wdfController; // this is a dirty little secret, so we contain it.
 
         if (!NT_SUCCESS(status)) {
-
             LogError(TRACE_DEVICE, "WdfIoQueueCreate failed for queue of ep %x %!STATUS!", EpAddr, status);
             goto exit;
         }

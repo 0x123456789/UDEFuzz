@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -44,6 +44,7 @@
     <DriverType>KMDF</DriverType>
     <PlatformToolset>WindowsKernelModeDriver10.0</PlatformToolset>
     <ConfigurationType>Driver</ConfigurationType>
+    <SpectreMitigation>false</SpectreMitigation>
   </PropertyGroup>
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <TargetVersion>Windows10</TargetVersion>
@@ -185,6 +186,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ALLOW_DATE_TIME>1</ALLOW_DATE_TIME>
+    <Inf2CatUseLocalTime>true</Inf2CatUseLocalTime>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ALLOW_DATE_TIME>1</ALLOW_DATE_TIME>
@@ -207,9 +209,6 @@
       <ExceptionHandling>
       </ExceptionHandling>
     </ClCompile>
-    <PostBuildEvent>
-      <Command>inf2cat /driver:$(ProjectDir)$(IntDir) /os:10_x64</Command>
-    </PostBuildEvent>
     <PostBuildEvent>
       <Message>catalog file for x64 debug</Message>
     </PostBuildEvent>

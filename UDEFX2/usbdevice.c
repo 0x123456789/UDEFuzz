@@ -19,6 +19,29 @@ Abstract:
 #include "usbdevice.tmh"
 #include "Descriptor.h"
 
+UCHAR g_BOS[21] = {
+        // BOS Descriptor
+        0x05,                       // bLength
+        USB_BOS_DESCRIPTOR_TYPE,    // bDescriptorType
+        0x16, 0x00,                 // wTotalLength
+        0x02,                       // bNumDeviceCaps
+
+        // USB 2.0 extension descriptor
+        0x07,                                   // bLength
+        USB_DEVICE_CAPABILITY_DESCRIPTOR_TYPE,  // bDescriptorType
+        USB_DEVICE_CAPABILITY_USB20_EXTENSION,  // bDevCapabilityType
+        0x06, 0x00, 0x00, 0x00,                 // bmAttributes
+
+        // SuperSpeed USB Device Capability Descriptor
+        0x0A,                                   // bLength
+        USB_DEVICE_CAPABILITY_DESCRIPTOR_TYPE,  // bDescriptorType
+        USB_DEVICE_CAPABILITY_SUPERSPEED_USB,   // bDevCapabilityType
+        0x00,                                   // bmAttributes
+        0x0E,                                   // wSpeedsSupported
+        0x02,                                   // bFunctionalitySupport (lower speed - high speed)
+        0x0A,                                   // wU1DevExitLat (less than 10 micro-seconds)
+        0xFF, 0x07,                             // wU2DevExitLat (less than 2047 micro-seconds)
+};
 
 
 #define UDECXMBIM_POOL_TAG 'UDEI'
@@ -112,7 +135,21 @@ Usb_Initialize(
     //
     // Set required attributes.
     //
-    UdecxUsbDeviceInitSetSpeed(controllerContext->ChildDeviceInit, UdecxUsbHighSpeed);
+
+    // Checking version of USB in device descriptor and add it to init settings
+    if (UsbDeviceDescriptor[3] == 0x02) {
+        UdecxUsbDeviceInitSetSpeed(controllerContext->ChildDeviceInit, UdecxUsbHighSpeed);
+        controllerContext->DeviceUSBVersion = 0x02;
+    }
+    else if (UsbDeviceDescriptor[3] == 0x03) {
+        UdecxUsbDeviceInitSetSpeed(controllerContext->ChildDeviceInit, UdecxUsbSuperSpeed);
+        controllerContext->DeviceUSBVersion = 0x03;
+    }
+    else {
+        LogError(TRACE_DEVICE, "Unexpected USB device version in device descriptor");
+        status = STATUS_INVALID_PARAMETER;
+        goto exit;
+    }
 
     UdecxUsbDeviceInitSetEndpointsType(controllerContext->ChildDeviceInit, UdecxEndpointTypeSimple);
 
@@ -129,6 +166,16 @@ Usb_Initialize(
         goto exit;
     }
 
+    if (UsbDeviceDescriptor[3] == 0x03) {
+        status = UdecxUsbDeviceInitAddDescriptor(
+            controllerContext->ChildDeviceInit,
+            g_BOS,
+            21);
+
+        if (!NT_SUCCESS(status)) {
+            goto exit;
+        }
+    }
 
     //
     // String descriptors
@@ -329,12 +376,26 @@ Usb_CreateEndpointsAndPlugIn(
     // This begins USB communication and prevents us from modifying descriptors and simple endpoints.
     //
     UDECX_USB_DEVICE_PLUG_IN_OPTIONS_INIT(&pluginOptions);
-    pluginOptions.Usb20PortNumber = 1;
+    // Checking version of USB in device and select sutable port
+    if (controllerContext->DeviceUSBVersion == 0x02) {
+        pluginOptions.Usb20PortNumber = 1;
+    }
+    else if (controllerContext->DeviceUSBVersion == 0x03) {
+        pluginOptions.Usb30PortNumber = 2;
+    }
+    else {
+        LogError(TRACE_DEVICE, "Unexpected USB device version in controller context");
+        status = STATUS_INVALID_PARAMETER;
+        goto exit;
+    }
     status = UdecxUsbDevicePlugIn(controllerContext->ChildDevice, &pluginOptions);
+    if (!NT_SUCCESS(status)) {
+        LogError(TRACE_DEVICE, "Failed to create plug-in device %!STATUS!", status);
+        goto exit;
+    }
     LogInfo(TRACE_DEVICE, "Usb_ReadDescriptorsAndPlugIn ends successfully");
 
 exit:
-    
     FuncExit(TRACE_DEVICE, 0);
     return status;
 }
@@ -352,8 +413,6 @@ Usb_Disconnect(
     controllerCtx = GetUsbControllerContext(WdfDevice);
 
     Io_StopDeferredProcessing(controllerCtx->ChildDevice, &ioContextCopy);
-
-
 
 
     status = UdecxUsbDevicePlugOutAndDelete(controllerCtx->ChildDevice);

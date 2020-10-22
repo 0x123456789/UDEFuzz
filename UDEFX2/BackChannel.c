@@ -236,13 +236,51 @@ BackChannelIoctl(
         LogInfo(TRACE_DEVICE, "ChildDevice: 0x%p", pControllerContext->ChildDevice);
         LogInfo(TRACE_DEVICE, "ChildDeviceInit: 0x%p", pControllerContext->ChildDeviceInit);
 
+        PVOID  buffer;
+        size_t  bufSize;
+
+        status = WdfRequestRetrieveInputBuffer(
+            Request,
+            sizeof(USHORT),
+            &buffer,
+            &bufSize
+        );
+
+        if (!NT_SUCCESS(status)) {
+            TraceEvents(TRACE_LEVEL_ERROR, TRACE_DEVICE, "%!FUNC! Unable to retrieve input buffer with device code");
+            goto gg;
+        }
+
+        USHORT deviceCode = *(USHORT*)buffer;
+        LogInfo(TRACE_DEVICE, "Device code: %d", deviceCode);
+
+        DESCRIPTORS descriptorSet;
         DESCRIPTOR_POOL pool = GetDescriptorPool();
 
+        switch (deviceCode) {
+        case DEFAULT_DESCRIPTOR_SET:
+            descriptorSet = pool.Descriptors[DEFAULT_DESCRIPTOR_SET];
+            break;
+        case KINGSTON_DESCRIPTOR_SET:
+            descriptorSet = pool.Descriptors[KINGSTON_DESCRIPTOR_SET];
+            break;
+        case FLASH_20_DESCRIPTOR_SET:
+            descriptorSet = pool.Descriptors[FLASH_20_DESCRIPTOR_SET];
+            break;
+        default:
+            TraceEvents(TRACE_LEVEL_ERROR, TRACE_DEVICE, "%!FUNC! Unknown device code");
+            goto gg;
+        }
+
+        LogInfo(TRACE_DEVICE, "%d", descriptorSet.Device.Length);
+        LogInfo(TRACE_DEVICE, "%d", descriptorSet.Configuration.Length);
+
+
         status = Usb_Initialize(ctrdevice,
-            pool.Descriptors[DEFAULT_DESCRIPTOR_SET].Device.Descriptor,
-            pool.Descriptors[DEFAULT_DESCRIPTOR_SET].Device.Length,
-            pool.Descriptors[DEFAULT_DESCRIPTOR_SET].Configuration.Descriptor,
-            pool.Descriptors[DEFAULT_DESCRIPTOR_SET].Configuration.Length);
+            descriptorSet.Device.Descriptor,
+            descriptorSet.Device.Length,
+            descriptorSet.Configuration.Descriptor,
+            descriptorSet.Configuration.Length);
 
         if (!NT_SUCCESS(status)) {
             TraceEvents(TRACE_LEVEL_ERROR,
