@@ -49,6 +49,7 @@
     <ClCompile Include="Misc.c" />
     <ClCompile Include="USBCom.c" />
     <ClCompile Include="usbdevice.c" />
+    <ClCompile Include="USBSCSI.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AgentControl.h" />
@@ -66,6 +67,7 @@
     <ClInclude Include="Trace.h" />
     <ClInclude Include="USBCom.h" />
     <ClInclude Include="usbdevice.h" />
+    <ClInclude Include="USBSCSI.h" />
   </ItemGroup>
   <ItemGroup>
     <Inf Include="UDEFX2.inf" />

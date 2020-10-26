@@ -18,6 +18,7 @@ Environment:
 
 #include "public.h"
 #include "Misc.h"
+#include "USBSCSI.h"
 
 EXTERN_C_START
 
@@ -42,6 +43,8 @@ typedef struct _UDECX_USBCONTROLLER_CONTEXT {
     KEVENT ResetCompleteEvent;
     BOOLEAN AllowOnlyResetInterrupts;
     WDFQUEUE DefaultQueue;
+
+    SCSI LastSCSIRequest;
     WRITE_BUFFER_TO_READ_REQUEST_QUEUE missionRequest;
     WRITE_BUFFER_TO_READ_REQUEST_QUEUE missionCompletion;
 

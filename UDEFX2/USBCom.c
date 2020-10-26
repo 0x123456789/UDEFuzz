@@ -19,6 +19,8 @@ Abstract:
 #include "ucx/1.4/ucxobjects.h"
 #include "USBCom.tmh"
 #include "Descriptor.h"
+#include "USBSCSI.h"
+
 
 
 
@@ -141,14 +143,16 @@ IoEvtBulkOutUrb(
     _In_ ULONG IoControlCode
 )
 {
-    WDFREQUEST matchingRead;
+    //WDFREQUEST matchingRead;
     WDFDEVICE backchannel;
     PUDECX_BACKCHANNEL_CONTEXT pBackChannelContext;
     PENDPOINTQUEUE_CONTEXT pEpQContext;
     NTSTATUS status = STATUS_SUCCESS;
     PUCHAR transferBuffer;
     ULONG transferBufferLength = 0;
-    SIZE_T completeBytes = 0;
+    //SIZE_T completeBytes = 0;
+
+    PCOMMAND_BLOCK_WRAPPER cbw = NULL;
 
     UNREFERENCED_PARAMETER(OutputBufferLength);
     UNREFERENCED_PARAMETER(InputBufferLength);
@@ -172,38 +176,67 @@ IoEvtBulkOutUrb(
             Request, status);
         goto exit;
     }
-
-    // try to get us information about a request that may be waiting for this info
-    status = WRQueuePushWrite(
-        &(pBackChannelContext->missionRequest),
-        transferBuffer,
-        transferBufferLength,
-        &matchingRead);
-
-    if (matchingRead != NULL)
-    {
-        PVOID rbuffer;
-        SIZE_T rlen;
-
-        // this is a back-channel read, not a USB read!
-        status = WdfRequestRetrieveOutputBuffer(matchingRead, 1, &rbuffer, &rlen);
-
-        if (!NT_SUCCESS(status))  {
-
-            LogError(TRACE_DEVICE, "WdfRequest %p cannot retrieve mission completion buffer %!STATUS!",
-                matchingRead, status);
-
-        } else  {
-            completeBytes = MINLEN(rlen, transferBufferLength);
-            memcpy(rbuffer, transferBuffer, completeBytes);
-        }
-
-        WdfRequestCompleteWithInformation(matchingRead, status, completeBytes);
-
-        LogInfo(TRACE_DEVICE, "Mission request %p completed with matching read %p", Request, matchingRead);
-    } else {
-        LogInfo(TRACE_DEVICE, "Mission request %p enqueued", Request);
+    
+    if (IsSCSIRequest(transferBuffer, transferBufferLength)) {
+        cbw = (PCOMMAND_BLOCK_WRAPPER)transferBuffer;
+        LogInfo(TRACE_DEVICE, "[SCSI] Writing request with OPCODE %d", cbw->CBWCB[0]);
+        SCSIWrite(&(pBackChannelContext->LastSCSIRequest), cbw);
+        LogInfo(TRACE_DEVICE, "[SCSI] LastSCSIRequest addr: %p", &(pBackChannelContext->LastSCSIRequest));
+        LogInfo(TRACE_DEVICE, "[SCSI] LastSCSIRequest handled: %d", pBackChannelContext->LastSCSIRequest.Handled);
     }
+    
+   
+
+    //if (1) {
+    //    PVOID gg = ExAllocatePool(PagedPool, transferBufferLength + 1);
+    //    if (gg == NULL) {
+    //        TraceEvents(TRACE_LEVEL_ERROR,
+    //            TRACE_QUEUE,
+    //            "Not enough memory to queue write, err= %!STATUS!", status);
+    //        status = STATUS_INSUFFICIENT_RESOURCES;
+    //    }
+
+    //    //sizeof(COMMAND_BLOCK_WRAPPER);
+    //    // copy
+    //    memcpy(gg, transferBuffer, transferBufferLength);
+    //    char* bb = gg;
+    //    bb[transferBufferLength] = '\0';
+    //    LogInfo(TRACE_DEVICE, "TRANSF BUFF bOUT: %s", bb);
+    //    ExFreePool(gg);
+    //}
+
+
+    //// try to get us information about a request that may be waiting for this info
+    //status = WRQueuePushWrite(
+    //    &(pBackChannelContext->missionRequest),
+    //    transferBuffer,
+    //    transferBufferLength,
+    //    &matchingRead);
+
+    //if (matchingRead != NULL)
+    //{
+    //    PVOID rbuffer;
+    //    SIZE_T rlen;
+
+    //    // this is a back-channel read, not a USB read!
+    //    status = WdfRequestRetrieveOutputBuffer(matchingRead, 1, &rbuffer, &rlen);
+
+    //    if (!NT_SUCCESS(status))  {
+
+    //        LogError(TRACE_DEVICE, "WdfRequest %p cannot retrieve mission completion buffer %!STATUS!",
+    //            matchingRead, status);
+
+    //    } else  {
+    //        completeBytes = MINLEN(rlen, transferBufferLength);
+    //        memcpy(rbuffer, transferBuffer, completeBytes);
+    //    }
+
+    //    WdfRequestCompleteWithInformation(matchingRead, status, completeBytes);
+
+    //    LogInfo(TRACE_DEVICE, "Mission request %p completed with matching read %p", Request, matchingRead);
+    //} else {
+    //    LogInfo(TRACE_DEVICE, "Mission request %p enqueued", Request);
+    //}
 
 
 
@@ -234,6 +267,7 @@ IoEvtBulkInUrb(
     BOOLEAN bReady = FALSE;
     PUCHAR transferBuffer;
     ULONG transferBufferLength;
+    ULONG responseLen = 0;
     SIZE_T completeBytes = 0;
 
     UNREFERENCED_PARAMETER(OutputBufferLength);
@@ -259,14 +293,81 @@ IoEvtBulkInUrb(
         goto exit;
     }
 
-    // try to get us information about a request that may be waiting for this info
-    status = WRQueuePullRead(
-        &(pBackChannelContext->missionCompletion),
-        Request,
+    LogInfo(TRACE_DEVICE, "Before: %d, %d, %d, %d",
+        transferBuffer[0], transferBuffer[1], transferBuffer[2], transferBuffer[3]);
+
+
+    SCSIHandleBulkInResponse(
+        &pBackChannelContext->LastSCSIRequest,
         transferBuffer,
         transferBufferLength,
-        &bReady,
-        &completeBytes);
+        &responseLen
+    );
+
+    LogInfo(TRACE_DEVICE, "After: %d, %d, %d, %d",
+        transferBuffer[0], transferBuffer[1], transferBuffer[2], transferBuffer[3]);
+
+    bReady = TRUE;
+    completeBytes = responseLen;
+    status = STATUS_SUCCESS;
+
+
+    //WDFMEMORY  reqMemory;
+    //// get memory -----------------------
+    //status = WdfRequestRetrieveInputMemory(
+    //    Request,
+    //    &reqMemory
+    //);
+
+    //if (!NT_SUCCESS(status)) {
+    //    LogError(TRACE_DEVICE, "No input buffer provided !!!! err= %!STATUS!", status);
+    //}
+    //else {
+    //    size_t bufSize;
+    //    PVOID b = WdfMemoryGetBuffer(reqMemory, &bufSize);
+
+    //    PVOID gg = ExAllocatePool(PagedPool, bufSize + 1);
+    //    if (gg == NULL) {
+    //        TraceEvents(TRACE_LEVEL_ERROR,
+    //            TRACE_QUEUE,
+    //            "Not enough memory to queue write, err= %!STATUS!", status);
+    //        status = STATUS_INSUFFICIENT_RESOURCES;
+    //    }
+
+    //    // copy
+    //    memcpy(gg, b, bufSize);
+    //    char* bb = gg;
+    //    bb[bufSize] = '\0';
+    //    LogInfo(TRACE_DEVICE, "INBUFF: %s", bb);
+    //    ExFreePool(gg);
+    //}
+
+   
+
+    //// return some random bytes for now ------------------------------
+
+    //LARGE_INTEGER iSeed;
+    //KeQuerySystemTime(&iSeed);
+    //
+    //for (ULONG i = 0; i < transferBufferLength; i++) {
+    //    transferBuffer[i] = (UCHAR)0x41;
+    //    //transferBuffer[i] = (UCHAR)RtlRandomEx(&iSeed.LowPart);
+    //}
+
+    //bReady = TRUE;
+    //completeBytes = transferBufferLength;
+    //status = STATUS_SUCCESS;
+
+    // ---------------------------------------------------------------
+
+    //// try to get us information about a request that may be waiting for this info
+    //status = WRQueuePullRead(
+    //    &(pBackChannelContext->missionCompletion),
+    //    Request,
+    //    transferBuffer,
+    //    transferBufferLength,
+    //    &bReady,
+    //    &completeBytes);
 
     if (bReady)
     {

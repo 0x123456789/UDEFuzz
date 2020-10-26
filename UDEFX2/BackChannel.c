@@ -59,6 +59,12 @@ BackChannelInit(
         goto exit;
     }
 
+    status = SCSIInit(&(pControllerContext->LastSCSIRequest));
+    if (!NT_SUCCESS(status)) {
+        LogError(TRACE_DEVICE, "Unable to initialize LastSCSIRequest, err= %!STATUS!", status);
+        goto exit;
+    }
+
 exit:
     return status;
 }
@@ -75,6 +81,7 @@ BackChannelDestroy(
 
     WRQueueDestroy(&(pControllerContext->missionCompletion));
     WRQueueDestroy(&(pControllerContext->missionRequest));
+    SCSIDestroy(&(pControllerContext->LastSCSIRequest));
 }
 
 VOID
