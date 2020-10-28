@@ -78,6 +78,9 @@
     <ClInclude Include="USBSCSI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Descriptors\HID.h">
+      <Filter>Header Files\Descriptors</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Device.c">
@@ -115,6 +118,9 @@
     </ClCompile>
     <ClCompile Include="USBSCSI.c">
       <Filter>Resource Files\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Descriptors\HID.c">
+      <Filter>Header Files\Descriptors</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

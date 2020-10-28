@@ -42,6 +42,7 @@
     <ClCompile Include="Default.c" />
     <ClCompile Include="Descriptor.c" />
     <ClCompile Include="Descriptors\Flash20.c" />
+    <ClCompile Include="Descriptors\HID.c" />
     <ClCompile Include="Device.c" />
     <ClCompile Include="Driver.c" />
     <ClCompile Include="DriverInfo.c" />
@@ -58,6 +59,7 @@
     <ClInclude Include="Descriptors\Common.h" />
     <ClInclude Include="Descriptors\Default.h" />
     <ClInclude Include="Descriptors\Flash20.h" />
+    <ClInclude Include="Descriptors\HID.h" />
     <ClInclude Include="Descriptors\KingstonFlash.h" />
     <ClInclude Include="Device.h" />
     <ClInclude Include="Driver.h" />
