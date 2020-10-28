@@ -49,7 +49,7 @@ const UCHAR g_Flash20UsbConfigDescriptorSet[] =
         // Bulk Out Endpoint descriptor
         0x07,                           // Descriptor size
         USB_ENDPOINT_DESCRIPTOR_TYPE,   // bDescriptorType
-        0x02,                           // bEndpointAddress
+        g_BulkOutEndpointAddress,       // bEndpointAddress
         USB_ENDPOINT_TYPE_BULK,         // bmAttributes - bulk
         0x00, 0x02,                     // wMaxPacketSize
         0x01,                           // bInterval
@@ -57,7 +57,7 @@ const UCHAR g_Flash20UsbConfigDescriptorSet[] =
         // Bulk IN endpoint descriptor
         0x07,                           // Descriptor size 
         USB_ENDPOINT_DESCRIPTOR_TYPE,   // Descriptor type
-        0x84,                           // Endpoint address and description
+        g_BulkInEndpointAddress,        // Endpoint address and description
         USB_ENDPOINT_TYPE_BULK,         // bmAttributes - bulk
         0x00, 0x02,                     // Max packet size
         0x01,                           // Servicing interval for data transfers : NA for bulk
