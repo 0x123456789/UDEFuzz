@@ -21,6 +21,7 @@ Abstract:
 #include <initguid.h>
 #include <usbioctl.h>
 
+#include "Descriptor.h"
 #include "trace.h"
 
 
@@ -47,10 +48,7 @@ EXTERN_C_START
 NTSTATUS
 Usb_Initialize(
     _In_ WDFDEVICE WdfDevice,
-    _In_ PUCHAR UsbDeviceDescriptor,
-    _In_ USHORT UsbDeviceDescriptorLen,
-    _In_ PUCHAR UsbConfigDescriptor,
-    _In_ USHORT UsbConfigDescriptorLen
+    _In_ DESCRIPTORS Descriptors
 );
 
 NTSTATUS Usb_CreateDeviceAndEndpoints(

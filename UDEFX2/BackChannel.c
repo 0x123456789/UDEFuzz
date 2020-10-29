@@ -283,11 +283,7 @@ BackChannelIoctl(
         LogInfo(TRACE_DEVICE, "%d", descriptorSet.Configuration.Length);
 
 
-        status = Usb_Initialize(ctrdevice,
-            descriptorSet.Device.Descriptor,
-            descriptorSet.Device.Length,
-            descriptorSet.Configuration.Descriptor,
-            descriptorSet.Configuration.Length);
+        status = Usb_Initialize(ctrdevice, descriptorSet);
 
         if (!NT_SUCCESS(status)) {
             TraceEvents(TRACE_LEVEL_ERROR,

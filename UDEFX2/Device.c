@@ -220,12 +220,9 @@ Return Value:
 		&pControllerContext->DefaultQueue);
 
 	if (!NT_SUCCESS(status)) {
-
 		LogError(TRACE_DEVICE, "Default queue creation failed %!STATUS!", status);
 		goto exit;
 	}
-
-
 
 	//
 	// Initialize virtual USB device software objects.
@@ -233,12 +230,10 @@ Return Value:
 	DESCRIPTOR_POOL pool = GetDescriptorPool();
 
 	status = Usb_Initialize(wdfDevice,
-		pool.Descriptors[DEFAULT_DESCRIPTOR_SET].Device.Descriptor,
-		pool.Descriptors[DEFAULT_DESCRIPTOR_SET].Device.Length,
-		pool.Descriptors[DEFAULT_DESCRIPTOR_SET].Configuration.Descriptor,
-		pool.Descriptors[DEFAULT_DESCRIPTOR_SET].Configuration.Length);
+		pool.Descriptors[DEFAULT_DESCRIPTOR_SET]);
 
 	if (!NT_SUCCESS(status)) {
+		LogError(TRACE_DEVICE, "Usb_Initialize failed %!STATUS!", status);
 		goto exit;
 	}
 
@@ -246,13 +241,13 @@ Return Value:
 	// Setup the S0 Idle settings just so that we get registered with power
 	// framework as some SOC platforms depend on it. 
 	//
+
 	WDF_DEVICE_POWER_POLICY_IDLE_SETTINGS_INIT(&idleSettings, IdleCannotWakeFromS0); // TODO:can
 
 																					 //idleSettings.IdleTimeoutType = SystemManagedIdleTimeoutWithHint;
 																					 //idleSettings.Enabled = WdfFalse;
 
 	if (!NT_SUCCESS(status)) {
-
 		LogError(TRACE_DEVICE, "WdfDeviceAssignS0IdleSettings failed %!STATUS!", status);
 		goto exit;
 	}

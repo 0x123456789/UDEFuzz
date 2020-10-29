@@ -17,7 +17,6 @@ Abstract:
 #include "USBCom.h"
 #include "ucx/1.4/ucxobjects.h"
 #include "usbdevice.tmh"
-#include "Descriptor.h"
 
 UCHAR g_BOS[21] = {
         // BOS Descriptor
@@ -88,10 +87,7 @@ UCHAR g_BOS[21] = {
 NTSTATUS
 Usb_Initialize(
     _In_ WDFDEVICE WdfDevice,
-    _In_ PUCHAR UsbDeviceDescriptor,
-    _In_ USHORT UsbDeviceDescriptorLen,
-    _In_ PUCHAR UsbConfigDescriptor,
-    _In_ USHORT UsbConfigDescriptorLen
+    _In_ DESCRIPTORS Descriptors
 )
 {
     NTSTATUS                                    status;
@@ -101,6 +97,18 @@ Usb_Initialize(
 
     FuncEntry(TRACE_DEVICE);
     
+    //
+    // Getting descriptors
+    //
+
+    PUCHAR UsbDeviceDescriptor = Descriptors.Device.Descriptor;
+    PUCHAR UsbConfigDescriptor = Descriptors.Configuration.Descriptor;
+    PUCHAR UsbReportDescriptor = Descriptors.Report.Descriptor;
+
+    USHORT UsbDeviceDescriptorLen = Descriptors.Device.Length;
+    USHORT UsbConfigDescriptorLen = Descriptors.Configuration.Length;
+    USHORT UsbReportDescriptorLen = Descriptors.Report.Length;
+
     //
     // Allocate per-controller private contexts used by other source code modules (I/O,
     // etc.)
@@ -240,6 +248,21 @@ Usb_Initialize(
         LogError(TRACE_DEVICE, "Failed to add configuration descriptor %!STATUS!", status);
         goto exit;
     }
+
+    
+    // if USB device is HID then this descriptor will be exists
+
+    if (UsbReportDescriptor != NULL) {
+        status = UdecxUsbDeviceInitAddDescriptor(controllerContext->ChildDeviceInit,
+            UsbReportDescriptor,
+            UsbReportDescriptorLen);
+
+        if (!NT_SUCCESS(status)) {
+            LogError(TRACE_DEVICE, "Failed to add report descriptor %!STATUS!", status);
+            goto exit;
+        }
+    }
+   
 
 exit:
 
