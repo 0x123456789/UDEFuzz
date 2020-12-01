@@ -229,8 +229,7 @@ Return Value:
 	//
 	DESCRIPTOR_POOL pool = GetDescriptorPool();
 
-	status = Usb_Initialize(wdfDevice,
-		pool.Descriptors[DEFAULT_DESCRIPTOR_SET]);
+	status = Usb_Initialize(wdfDevice, pool.Descriptors[DEFAULT_DESCRIPTOR_SET]);
 
 	if (!NT_SUCCESS(status)) {
 		LogError(TRACE_DEVICE, "Usb_Initialize failed %!STATUS!", status);

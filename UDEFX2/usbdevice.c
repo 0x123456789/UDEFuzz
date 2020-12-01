@@ -109,6 +109,11 @@ Usb_Initialize(
     USHORT UsbConfigDescriptorLen = Descriptors.Configuration.Length;
     USHORT UsbReportDescriptorLen = Descriptors.Report.Length;
 
+    if (UsbDeviceDescriptorLen == 0) {
+        status = STATUS_INVALID_PARAMETER;
+        return 0;
+    }
+
     //
     // Allocate per-controller private contexts used by other source code modules (I/O,
     // etc.)
