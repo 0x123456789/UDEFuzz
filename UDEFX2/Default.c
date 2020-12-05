@@ -97,5 +97,8 @@ DESCRIPTORS GetDefaultDevDescriptors() {
     d.Configuration.Descriptor = (PUCHAR)g_UsbConfigDescriptorSet;
     d.Configuration.Length = sizeof(g_UsbConfigDescriptorSet);
 
+    d.Report.Descriptor = NULL;
+    d.Report.Length = 0;
+
     return d;
 }

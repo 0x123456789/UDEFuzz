@@ -74,6 +74,10 @@ DESCRIPTORS GetFlash20DevDescriptors() {
 
     d.Configuration.Descriptor = (PUCHAR)g_Flash20UsbConfigDescriptorSet;
     d.Configuration.Length = sizeof(g_Flash20UsbConfigDescriptorSet);
+
+    d.Report.Descriptor = NULL;
+    d.Report.Length = 0;
+
     return d;
 
 }

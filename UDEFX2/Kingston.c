@@ -121,9 +121,14 @@ DESCRIPTORS GetKingstonDevDescriptors() {
 
     d.Device.Descriptor = (PUCHAR)g_KingstonUsbDeviceDescriptor;
     d.Device.Length = sizeof(g_KingstonUsbDeviceDescriptor);
+    
 
     d.Configuration.Descriptor = (PUCHAR)g_KingstonUsbConfigDescriptorSet;
     d.Configuration.Length = sizeof(g_KingstonUsbConfigDescriptorSet);
+    
+    d.Report.Descriptor = NULL;
+    d.Report.Length = 0;
+
     return d;
 }
 
