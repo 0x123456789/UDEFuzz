@@ -7,3 +7,5 @@ AGENT/x64/*
 /UDEFX2/x64/*
 /UDEFX_host/driver/x64/Debug/*
 /UDEFX_host/exe/x64/Debug/*
+
+/UDEFX2/packages/*
