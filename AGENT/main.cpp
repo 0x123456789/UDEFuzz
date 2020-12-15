@@ -1,7 +1,7 @@
 #pragma once 
 
 #include <initguid.h>
-#include <windows.h>
+#include <Windows.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -9,8 +9,10 @@
 
 #include "..\UDEFX2\public.h"
 #include "..\UDEFX2\AgentControl.h"
+#include "..\UDEFX2\Fuzzing.h"
 
 #include "http.h"
+#include "Devices.h"
 
 #pragma comment(lib, "Cfgmgr32.lib")
 
@@ -116,26 +118,35 @@ void UnplugUSBDevice(LPGUID interfaceGuid) {
 void PlugInUSBDevice(LPGUID interfaceGuid, USHORT deviceCode) {
     wprintf(L"[*] Selected device code: %d\n", deviceCode);
 
+    HANDLE handle = NULL;
     DWORD bytesReturned = 0;
     PZZWSTR devices = GetPresentDeviceList(interfaceGuid);
     // unplug open first device of the list
     if (*devices != UNICODE_NULL) {
         wprintf(L"Plug-in device %ls...\n", devices);
-        HANDLE handle = OpenDevice(devices);
+        handle = OpenDevice(devices);
         if (handle != INVALID_HANDLE_VALUE) {
+
+            // getting fuzzing config for plugged-in device
+            FUZZING_CONTEXT context;
+            // just magic constant :)
+            context.Seed = 112233;
+            // for simplicity modes have same values as device codes
+            context.Mode = (MODE)deviceCode;
+
             if (!DeviceIoControl(handle,
                 IOCTL_PLUG_USB_DEVICE,
-                &deviceCode,           // Ptr to InBuffer
-                sizeof(deviceCode),    // Length of InBuffer
-                NULL,                  // Ptr to OutBuffer
-                0,                     // Length of OutBuffer
-                &bytesReturned,        // BytesReturned
-                0))                    // Ptr to Overlapped structure
+                &context,                   // Ptr to InBuffer
+                sizeof(FUZZING_CONTEXT),    // Length of InBuffer
+                NULL,                       // Ptr to OutBuffer
+                0,                          // Length of OutBuffer
+                &bytesReturned,             // BytesReturned
+                0))                         // Ptr to Overlapped structure
             {
                 wprintf(L"DeviceIoControl failed with error 0x%x\n", GetLastError());
                 return;
             }
-            wprintf(L"Virtual USB device unplugged and deleted successully\n");
+            wprintf(L"Virtual USB device plugged successully\n");
         }
         else {
             wprintf(L"Failed to open the device, error - %d", GetLastError());
@@ -172,6 +183,42 @@ void GetDriverInfo(LPGUID interfaceGuid) {
         }
         else {
             wprintf(L"Failed to open the device, error - %d", GetLastError());
+            return;
+        }
+    }
+    else {
+        return;
+    }
+}
+
+
+void GenerateInterrupt(LPGUID interfaceGuid) {
+    HANDLE handle = NULL;
+    DWORD bytesReturned = 0;
+    PZZWSTR devices = GetPresentDeviceList(interfaceGuid);
+    // unplug open first device of the list
+    if (*devices != UNICODE_NULL) {
+        wprintf(L"GenerateInterrupt device %ls...\n", devices);
+        handle = OpenDevice(devices);
+        if (handle != INVALID_HANDLE_VALUE) {
+            DEVICE_INTR_FLAGS f = 0xaa;
+
+            if (!DeviceIoControl(handle,
+                IOCTL_UDEFX2_GENERATE_INTERRUPT,
+                &f,                         // Ptr to InBuffer
+                sizeof(DEVICE_INTR_FLAGS),    // Length of InBuffer
+                NULL,                       // Ptr to OutBuffer
+                0,                          // Length of OutBuffer
+                &bytesReturned,             // BytesReturned
+                0))                         // Ptr to Overlapped structure
+            {
+                wprintf(L"DeviceIoControl failed with error 0x%x\n", GetLastError());
+                return;
+            }
+            wprintf(L"GenerateInterrupt successully\n");
+        }
+        else {
+            wprintf(L"Failed to open GenerateInterrupt, error - %d", GetLastError());
             return;
         }
     }
@@ -297,7 +344,8 @@ DEFINE_GUID(GUID_DEVINTERFACE_HOSTUDE,
 
 int wmain(int argc, wchar_t* argv[]) {
 
-     ListenAndServe();
+     //ListenAndServe();
+    //IsUSBDeviceConnected((WCHAR*)L"vid_125f&pid_c82a");
 
     // using this guid we can communicate with our driver via CreateFile for getting handle
     LPGUID deviceGUID = (LPGUID)&GUID_DEVINTERFACE_UDE_BACKCHANNEL;
@@ -309,6 +357,7 @@ int wmain(int argc, wchar_t* argv[]) {
         case L'p': PlugInUSBDevice(deviceGUID, ToDeviceCode(argv[optind][2])); break;
         case L'i': GetDriverInfo(deviceGUID); break;
         case L'w': WriteTextTo((LPGUID)&GUID_DEVINTERFACE_HOSTUDE); break;
+        case L'r': GenerateInterrupt(deviceGUID); break;
 
             /*case 'l': mode = LINE_MODE; break;
             case 'w': mode = WORD_MODE; break;*/

@@ -1,3 +1,8 @@
+#include <ntddk.h>
+#include <wdf.h>
+#include <usb.h>
+#include <usbdlib.h>
+
 #include "Descriptors/Default.h"
 
 

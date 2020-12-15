@@ -1,3 +1,8 @@
+#include <ntddk.h>
+#include <wdf.h>
+#include <usb.h>
+#include <usbdlib.h>
+
 #include "Flash20.h"
 
 #define ADATA_DEVICE_VENDOR_ID   0x5F, 0x12 // little endian

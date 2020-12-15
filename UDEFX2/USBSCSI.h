@@ -1,15 +1,3 @@
-/*++
-
-Module Name:
-
-misc.h
-
-Abstract:
-
-
---*/
-
-
 #pragma once
 
 #include <ntddk.h>
@@ -54,6 +42,7 @@ typedef struct _COMMAND_STATUS_WRAPPER {
     UINT8 bCSWStatus;
 } COMMAND_STATUS_WRAPPER, * PCOMMAND_STATUS_WRAPPER;
 #pragma pack(pop, com_st)
+
 
 #pragma pack(push, inquiry, 1)
 typedef struct _INQUIRY {
@@ -107,6 +96,31 @@ typedef struct _INQUIRY {
     UCHAR ProductRevisionLevel[4];
 } INQUIRY, * PINQUIRY;
 #pragma pack(pop, inquiry)
+
+
+#pragma pack(push, read_10, 1)
+typedef struct _READ10 {
+    UCHAR bOpcode;
+    UCHAR bFlags;
+    UINT32 LogicalBlockAddr;
+    UINT16 TransferLength;
+    UCHAR GroupNumber;
+    UCHAR Control;
+} READ10, * PREAD10;
+#pragma pack(pop, read_10)
+
+#pragma pack(push, write_10, 1)
+typedef struct _WRITE10 {
+    UCHAR bOpcode;
+    UCHAR bFlags;
+    UINT32 LogicalBlockAddr;
+    UINT16 TransferLength;
+    UCHAR GroupNumber;
+    UCHAR Control;
+} WRITE10, * PWRITE10;
+#pragma pack(pop, write_10)
+
+
 
 
 typedef struct _SCSI {

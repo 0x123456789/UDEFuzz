@@ -103,11 +103,10 @@ Usb_Initialize(
 
     PUCHAR UsbDeviceDescriptor = Descriptors.Device.Descriptor;
     PUCHAR UsbConfigDescriptor = Descriptors.Configuration.Descriptor;
-    PUCHAR UsbReportDescriptor = Descriptors.Report.Descriptor;
-
+  
     USHORT UsbDeviceDescriptorLen = Descriptors.Device.Length;
     USHORT UsbConfigDescriptorLen = Descriptors.Configuration.Length;
-    USHORT UsbReportDescriptorLen = Descriptors.Report.Length;
+ 
 
     if (UsbDeviceDescriptorLen == 0) {
         status = STATUS_INVALID_PARAMETER;
@@ -122,6 +121,7 @@ Usb_Initialize(
     pComputedConfigDescSet = NULL;
 
     controllerContext = GetUsbControllerContext(WdfDevice);
+    controllerContext->Descriptors = Descriptors;
 
     //UsbValidateConstants();
 
@@ -150,7 +150,11 @@ Usb_Initialize(
     //
 
     // Checking version of USB in device descriptor and add it to init settings
-    if (UsbDeviceDescriptor[3] == 0x02) {
+    if (UsbDeviceDescriptor[3] == 0x01) {
+        UdecxUsbDeviceInitSetSpeed(controllerContext->ChildDeviceInit, UdecxUsbFullSpeed);
+        controllerContext->DeviceUSBVersion = 0x01;
+    }
+    else if (UsbDeviceDescriptor[3] == 0x02) {
         UdecxUsbDeviceInitSetSpeed(controllerContext->ChildDeviceInit, UdecxUsbHighSpeed);
         controllerContext->DeviceUSBVersion = 0x02;
     }
@@ -159,7 +163,8 @@ Usb_Initialize(
         controllerContext->DeviceUSBVersion = 0x03;
     }
     else {
-        LogError(TRACE_DEVICE, "Unexpected USB device version in device descriptor");
+        LogError(TRACE_DEVICE, "Unexpected USB device version in device descriptor: %d", 
+            UsbDeviceDescriptor[3]);
         status = STATUS_INVALID_PARAMETER;
         goto exit;
     }
@@ -257,7 +262,7 @@ Usb_Initialize(
     
     // if USB device is HID then this descriptor will be exists
 
-    if (UsbReportDescriptor != NULL) {
+   /* if (UsbReportDescriptor != NULL) {
         status = UdecxUsbDeviceInitAddDescriptor(controllerContext->ChildDeviceInit,
             UsbReportDescriptor,
             UsbReportDescriptorLen);
@@ -266,7 +271,7 @@ Usb_Initialize(
             LogError(TRACE_DEVICE, "Failed to add report descriptor %!STATUS!", status);
             goto exit;
         }
-    }
+    }*/
    
 
 exit:
@@ -405,14 +410,18 @@ Usb_CreateEndpointsAndPlugIn(
     //
     UDECX_USB_DEVICE_PLUG_IN_OPTIONS_INIT(&pluginOptions);
     // Checking version of USB in device and select sutable port
-    if (controllerContext->DeviceUSBVersion == 0x02) {
+    if (controllerContext->DeviceUSBVersion == 0x01) {
+        pluginOptions.Usb20PortNumber = 1;
+    }
+    else if (controllerContext->DeviceUSBVersion == 0x02) {
         pluginOptions.Usb20PortNumber = 1;
     }
     else if (controllerContext->DeviceUSBVersion == 0x03) {
         pluginOptions.Usb30PortNumber = 2;
     }
     else {
-        LogError(TRACE_DEVICE, "Unexpected USB device version in controller context");
+        LogError(TRACE_DEVICE, "Unexpected USB device version in controller context %d",
+            controllerContext->DeviceUSBVersion);
         status = STATUS_INVALID_PARAMETER;
         goto exit;
     }

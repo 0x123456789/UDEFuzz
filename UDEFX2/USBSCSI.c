@@ -23,8 +23,14 @@ INQUIRY DefaultInquiry() {
 
 READ_CAPACITY_DATA DefaultCapacity() {
     READ_CAPACITY_DATA capacity;
+    // logical address of last block on USB flash drive (here 7892991)
     capacity.LogicalBlockAddress = 0xFF6F7800;
+    // 512 bytes
     capacity.BytesPerBlock = 0x00020000;
+    
+    // 7892991 = (size / 512) - 1,
+    // so size = 7892992 * 512 = 4041211904 bytes = 3 854 megabytes
+
     return capacity;
 }
 
@@ -45,6 +51,8 @@ COMMAND_STATUS_WRAPPER CommandStatus(UINT32 Tag, UINT8 Status) {
     csw.bCSWStatus = Status;
     return csw;
 }
+
+
 
 NTSTATUS
 SCSIInit(
@@ -91,6 +99,8 @@ BOOLEAN SCSIHandleBulkInResponse(
 ) 
 { 
     PCDB cdb = NULL;
+    UINT32 i = 0;
+    UINT32 n = 0;
     
     WdfSpinLockAcquire(pSCSI->qsync);
 
@@ -192,7 +202,46 @@ BOOLEAN SCSIHandleBulkInResponse(
             break;
 
         // case SCSIOP_READ_FORMATTED_CAPACITY:
-            
+        
+        // This is not required for flash drive basic work
+        // actually this is READ_10
+        case SCSIOP_READ:
+            // getting addr of first block to read
+            i = ((pSCSI->cbw.CBWCB[2] << 24) | (pSCSI->cbw.CBWCB[3] << 16) | 
+                (pSCSI->cbw.CBWCB[4] << 8) | (pSCSI->cbw.CBWCB[5]));
+
+            // getting addr of last block to read
+            n = i + ((pSCSI->cbw.CBWCB[7] << 8) | pSCSI->cbw.CBWCB[8]);
+
+
+            DbgPrint("i: %d, n: %d, ResponseBufferLen: %d\n", i, n, ResponseBufferLen);
+
+            // if don't we have enouth space to save our response
+            if (ResponseBufferLen < n - i) {
+                LogError(TRACE_DEVICE, "[ERROR] Can't copy response to buffer: ResponseBufferLen < sizeof(READ10)");
+                goto notSupported;
+            }
+
+            for (; i < n; i++) {
+                // will be random data in future
+                for (int k = 0; k < 512; k++) {
+                    ResponseBuffer[k] = (k + 1) % 10;
+                }
+            }
+            (*ResponseLen) = 512;
+
+            break;
+        case SCSIOP_WRITE:
+            // getting addr of first block to write
+            i = ((pSCSI->cbw.CBWCB[2] << 24) | (pSCSI->cbw.CBWCB[3] << 16) |
+                (pSCSI->cbw.CBWCB[4] << 8) | (pSCSI->cbw.CBWCB[5]));
+
+            // getting addr of last block to write
+            n = i + ((pSCSI->cbw.CBWCB[7] << 8) | pSCSI->cbw.CBWCB[8]);
+            LogInfo(TRACE_DEVICE, "[INFO] ResponseBufferLen: %d", ResponseBufferLen);
+
+            break;
+
         default:
             goto notSupported;
 

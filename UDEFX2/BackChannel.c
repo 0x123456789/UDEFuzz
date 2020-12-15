@@ -35,6 +35,38 @@ Kernel-mode Driver Framework
 #include <ntstrsafe.h>
 #include "BackChannel.tmh"
 
+NTSTATUS SetFuzzingContext(
+    _In_ WDFREQUEST Request,
+    _Inout_ WDFDEVICE ctrdevice
+)
+{
+    PVOID  buffer;
+    size_t  bufSize;
+
+    NTSTATUS status = WdfRequestRetrieveInputBuffer(
+        Request,
+        sizeof(FUZZING_CONTEXT),
+        &buffer,
+        &bufSize
+    );
+
+    if (!NT_SUCCESS(status)) {
+        LogError(TRACE_DEVICE, "%!FUNC! Unable to retrieve input buffer with device code");
+        return status;
+    }
+
+    if (bufSize != sizeof(FUZZING_CONTEXT)) {
+        LogError(TRACE_DEVICE, "%!FUNC! sizeof(FUZZING_CONTEXT) != size of input buffer");
+        return STATUS_INVALID_BUFFER_SIZE;
+    }
+
+    PUDECX_USBCONTROLLER_CONTEXT pControllerContext = GetUsbControllerContext(ctrdevice);
+    memcpy(&pControllerContext->FuzzingContext, buffer, sizeof(FUZZING_CONTEXT));
+
+    LogInfo(TRACE_DEVICE, "New fuzzing seed: %d", pControllerContext->FuzzingContext.Seed);
+    return status;
+
+}
 
 
 NTSTATUS
@@ -135,6 +167,8 @@ exit:
     return;
 
 }
+
+
 
 VOID
 BackChannelEvtWrite(
@@ -243,47 +277,43 @@ BackChannelIoctl(
         LogInfo(TRACE_DEVICE, "ChildDevice: 0x%p", pControllerContext->ChildDevice);
         LogInfo(TRACE_DEVICE, "ChildDeviceInit: 0x%p", pControllerContext->ChildDeviceInit);
 
-        PVOID  buffer;
-        size_t  bufSize;
-
-        status = WdfRequestRetrieveInputBuffer(
-            Request,
-            sizeof(USHORT),
-            &buffer,
-            &bufSize
-        );
-
+        status = SetFuzzingContext(Request, ctrdevice);
         if (!NT_SUCCESS(status)) {
-            TraceEvents(TRACE_LEVEL_ERROR, TRACE_DEVICE, "%!FUNC! Unable to retrieve input buffer with device code");
+            TraceEvents(TRACE_LEVEL_ERROR,
+                TRACE_DEVICE,
+                "%!FUNC! Unable to set fuzzing context");
             goto gg;
         }
-
-        USHORT deviceCode = *(USHORT*)buffer;
-        LogInfo(TRACE_DEVICE, "Device code: %d", deviceCode);
-
+      
         DESCRIPTORS descriptorSet;
         DESCRIPTOR_POOL pool = GetDescriptorPool();
 
-        switch (deviceCode) {
-        case DEFAULT_DESCRIPTOR_SET:
+        // Fuzzing mode constant are the same as indexes of descriptors set
+        // please also see Fuzzing.h
+        switch (pControllerContext->FuzzingContext.Mode) {
+        case NONE_MODE:
             descriptorSet = pool.Descriptors[DEFAULT_DESCRIPTOR_SET];
             break;
-        case KINGSTON_DESCRIPTOR_SET:
+        case RESERVED_USB_30:
             descriptorSet = pool.Descriptors[KINGSTON_DESCRIPTOR_SET];
             break;
-        case FLASH_20_DESCRIPTOR_SET:
+        case SCSI_MODE:
             descriptorSet = pool.Descriptors[FLASH_20_DESCRIPTOR_SET];
             break;
+        case HID_MOUSE_MODE:
+            descriptorSet = pool.Descriptors[HID_MOUSE_DESCRIPTOR_SET];
+            break;
         default:
-            TraceEvents(TRACE_LEVEL_ERROR, TRACE_DEVICE, "%!FUNC! Unknown device code");
+            TraceEvents(TRACE_LEVEL_ERROR, TRACE_DEVICE, "%!FUNC!: Unknown device code");
+            status = STATUS_INVALID_PARAMETER;
             goto gg;
         }
 
-        LogInfo(TRACE_DEVICE, "%d", descriptorSet.Device.Length);
-        LogInfo(TRACE_DEVICE, "%d", descriptorSet.Configuration.Length);
 
 
-        status = Usb_Initialize(ctrdevice, descriptorSet);
+        status = Usb_Initialize(
+            ctrdevice,
+            descriptorSet);
 
         if (!NT_SUCCESS(status)) {
             TraceEvents(TRACE_LEVEL_ERROR,

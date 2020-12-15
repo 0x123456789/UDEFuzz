@@ -19,7 +19,9 @@ Abstract:
 #include "ucx/1.4/ucxobjects.h"
 #include "USBCom.tmh"
 #include "Descriptor.h"
+
 #include "USBSCSI.h"
+#include "USBHID.h"
 
 
 
@@ -84,11 +86,16 @@ IoEvtControlUrb(
     _In_ ULONG IoControlCode
 )
 {
+    PUCHAR buffer;
     WDF_USB_CONTROL_SETUP_PACKET setupPacket;
     NTSTATUS status;
     UNREFERENCED_PARAMETER(Queue);
     UNREFERENCED_PARAMETER(OutputBufferLength);
     UNREFERENCED_PARAMETER(InputBufferLength);
+
+    PENDPOINTQUEUE_CONTEXT pEpQContext = GetEndpointQueueContext(Queue);
+    WDFDEVICE backchannel = pEpQContext->backChannelDevice;
+    PUDECX_BACKCHANNEL_CONTEXT pBackChannelContext = GetBackChannelContext(backchannel);
 
     //NT_VERIFY(IoControlCode == IOCTL_INTERNAL_USB_SUBMIT_URB);
 
@@ -108,6 +115,37 @@ IoEvtControlUrb(
             goto exit;
         }
 
+        // if Get descriptor request (0x06) && descriptor type is report descriptor (0x22)
+        // when send HID descriptor
+        if (setupPacket.Packet.bRequest == 0x06 && setupPacket.Packet.wValue.Bytes.HiByte == 0x22) {
+            LogInfo(TRACE_DEVICE, "[IoEvtControlUrb] Report descriptor is requested");
+            // check if driver now really emulating HID USB device
+            if (pBackChannelContext->FuzzingContext.Mode == HID_MOUSE_MODE) {
+                
+                ULONG length = 0;
+                DESCRIPTOR_INFO d = pBackChannelContext->Descriptors.Report;
+
+                status = UdecxUrbRetrieveBuffer(Request, &buffer, &length);
+
+                if (!NT_SUCCESS(status)) {
+                    LogError(TRACE_DEVICE, "Can't get buffer for report descriptor: %!STATUS!", status);
+                    UdecxUrbCompleteWithNtStatus(Request, status);
+                    goto exit;
+                }
+
+                if (length < d.Length) {
+                    LogError(TRACE_DEVICE, "Buffer too small");
+                    UdecxUrbCompleteWithNtStatus(Request, status);
+                    goto exit;
+                }
+
+                // copy report descriptor in buffer
+                memcpy(buffer, d.Descriptor, d.Length);
+            }
+            else {
+                LogError(TRACE_DEVICE, "report descriptor is requested, but mode not HID_MOUSE_MODE");
+            }
+        }
 
         LogInfo(TRACE_DEVICE, "v44 control CODE %x, [type=%x dir=%x recip=%x] req=%x [wv = %x wi = %x wlen = %x]",
             IoControlCode,
@@ -263,6 +301,7 @@ IoEvtBulkInUrb(
     NTSTATUS status = STATUS_SUCCESS;
     WDFDEVICE backchannel;
     PUDECX_BACKCHANNEL_CONTEXT pBackChannelContext;
+    FUZZING_CONTEXT fuzzingContext;
     PENDPOINTQUEUE_CONTEXT pEpQContext;
     BOOLEAN bReady = FALSE;
     PUCHAR transferBuffer;
@@ -276,6 +315,7 @@ IoEvtBulkInUrb(
     pEpQContext = GetEndpointQueueContext(Queue);
     backchannel = pEpQContext->backChannelDevice;
     pBackChannelContext = GetBackChannelContext(backchannel);
+    fuzzingContext = pBackChannelContext->FuzzingContext;
 
     if (IoControlCode != IOCTL_INTERNAL_USB_SUBMIT_URB)
     {
@@ -293,19 +333,18 @@ IoEvtBulkInUrb(
         goto exit;
     }
 
-    LogInfo(TRACE_DEVICE, "Before: %d, %d, %d, %d",
-        transferBuffer[0], transferBuffer[1], transferBuffer[2], transferBuffer[3]);
+    /*LogInfo(TRACE_DEVICE, "Before: %d, %d, %d, %d",
+        transferBuffer[0], transferBuffer[1], transferBuffer[2], transferBuffer[3]);*/
 
 
-    SCSIHandleBulkInResponse(
-        &pBackChannelContext->LastSCSIRequest,
-        transferBuffer,
-        transferBufferLength,
-        &responseLen
-    );
-
-    LogInfo(TRACE_DEVICE, "After: %d, %d, %d, %d",
-        transferBuffer[0], transferBuffer[1], transferBuffer[2], transferBuffer[3]);
+    if (fuzzingContext.Mode == SCSI_MODE) {
+        SCSIHandleBulkInResponse(
+            &pBackChannelContext->LastSCSIRequest,
+            transferBuffer,
+            transferBufferLength,
+            &responseLen
+        );
+    }
 
     bReady = TRUE;
     completeBytes = responseLen;
@@ -401,6 +440,9 @@ IoCompletePendingRequest(
     _In_ WDFREQUEST request,
     _In_ DEVICE_INTR_FLAGS LatestStatus)
 {
+    UNREFERENCED_PARAMETER(LatestStatus);
+
+    ULONG responseLen;
     NTSTATUS status = STATUS_SUCCESS;
     PUCHAR transferBuffer;
     ULONG transferBufferLength;
@@ -413,26 +455,16 @@ IoCompletePendingRequest(
         goto exit;
     }
 
-    if (transferBufferLength != sizeof(LatestStatus))
-    {
-        LogError(TRACE_DEVICE, "Error: req %p Invalid interrupt buffer size, %d",
-            request, transferBufferLength);
-        status = STATUS_INVALID_BLOCK_LENGTH;
-        goto exit;
-    }
+    LogInfo(TRACE_DEVICE, "Trying complete interrupt as MOUSE HID");
+    HIDHandleBulkInResponse(
+        transferBuffer,
+        transferBufferLength,
+        &responseLen);
 
-    memcpy(transferBuffer, &LatestStatus, sizeof(LatestStatus) );
-
-    LogInfo(TRACE_DEVICE, "INTR completed req=%p, data=%x",
-        request,
-        LatestStatus
-    );
-
-    UdecxUrbSetBytesCompleted(request, transferBufferLength);
+    UdecxUrbSetBytesCompleted(request, responseLen);
 
 exit:
     UdecxUrbCompleteWithNtStatus(request, status);
-
     return;
 
 }
@@ -524,19 +556,17 @@ IoEvtInterruptInUrb(
 
 
     if (bHasData)  {
-
+        
         IoCompletePendingRequest(Request, LatestStatus);
 
     } else {
-
         status = WdfRequestForwardToIoQueue(Request, pIoContext->IntrDeferredQueue);
         if (NT_SUCCESS(status)) {
-            LogInfo(TRACE_DEVICE, "Request %p forwarded for later", Request);
+            LogInfo(TRACE_DEVICE, "Request %p forwarded for later (IoControlCode: %d)", Request, IoControlCode);
         } else {
             LogError(TRACE_DEVICE, "ERROR: Unable to forward Request %p error %!STATUS!", Request, status);
             UdecxUrbCompleteWithNtStatus(Request, status);
         }
-
     }
 
 exit:

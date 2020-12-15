@@ -89,7 +89,8 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalIncludeDirectories>C:\Users\user\source\repos\USB_UDE_Sample\UDEFX2\packages\cpprestsdk_x64-windows-static\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -146,9 +147,11 @@
     <ClCompile Include="Drivers.cpp" />
     <ClCompile Include="http.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Devices.cpp" />
     <ClCompile Include="Test.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Devices.h" />
     <ClInclude Include="Drivers.h" />
     <ClInclude Include="http.h" />
   </ItemGroup>

@@ -1,3 +1,8 @@
+#include <ntddk.h>
+#include <wdf.h>
+#include <usb.h>
+#include <usbdlib.h>
+
 #include "HID.h"
 
 // see: https://eleccelerator.com/tutorial-about-usb-hid-report-descriptors/
@@ -11,7 +16,7 @@ const UCHAR g_HIDUsbDeviceDescriptor[18] =
 {
     0x12,                            // Descriptor size
     USB_DEVICE_DESCRIPTOR_TYPE,      // Device descriptor type
-    0x00, 0x02,                      // USB 2.0
+    0x10, 0x01,                      // USB 2.0
     0x00,                            // Device class (interface-class defined)
     0x00,                            // Device subclass
     0x00,                            // Device protocol

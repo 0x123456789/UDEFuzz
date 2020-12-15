@@ -224,12 +224,28 @@ Return Value:
 		goto exit;
 	}
 
+	DESCRIPTOR_POOL pool = GetDescriptorPool();
+	DESCRIPTORS desc = pool.Descriptors[DEFAULT_DESCRIPTOR_SET];
+
+	//
+	// Prepare default values for fuzzing context
+	//
+
+	pControllerContext->FuzzingContext.Seed = 0x00;
+	pControllerContext->FuzzingContext.Mode = NONE_MODE;
+	pControllerContext->FuzzingContext.DescriptorSetIndx = DEFAULT_DESCRIPTOR_SET;
+
+	pControllerContext->FuzzingContext.VID[0] = desc.Device.Descriptor[8];
+	pControllerContext->FuzzingContext.VID[1] = desc.Device.Descriptor[9];
+	
+	pControllerContext->FuzzingContext.PID[0] = desc.Device.Descriptor[10];
+	pControllerContext->FuzzingContext.PID[1] = desc.Device.Descriptor[11];
+
 	//
 	// Initialize virtual USB device software objects.
 	//
-	DESCRIPTOR_POOL pool = GetDescriptorPool();
 
-	status = Usb_Initialize(wdfDevice, pool.Descriptors[DEFAULT_DESCRIPTOR_SET]);
+	status = Usb_Initialize(wdfDevice, desc);
 
 	if (!NT_SUCCESS(status)) {
 		LogError(TRACE_DEVICE, "Usb_Initialize failed %!STATUS!", status);
@@ -615,6 +631,9 @@ ControllerEvtUdecxWdfDeviceQueryUsbCapability(
 		LogInfo(TRACE_DEVICE, "GUID_USB_CAPABILITY_DEVICE_CONNECTION_SUPER_SPEED_COMPATIBLE");
 		return STATUS_SUCCESS;
 	}
+
+	LogError(TRACE_DEVICE, "Unsupported capability 3 first bytes: %d, %d, %d",
+		CapabilityType->Data1, CapabilityType->Data2, CapabilityType->Data3);
 
 	return STATUS_UNSUCCESSFUL;
 }

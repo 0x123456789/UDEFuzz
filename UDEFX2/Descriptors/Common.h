@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ntddk.h>
+#include <ntdef.h>
 
 
 #define g_BulkOutEndpointAddress 2

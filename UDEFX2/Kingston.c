@@ -1,3 +1,8 @@
+#include <ntddk.h>
+#include <wdf.h>
+#include <usb.h>
+#include <usbdlib.h>
+
 #include "Descriptors/KingstonFlash.h"
 
 #define KINGSTON_DEVICE_VENDOR_ID  0x51, 0x09 // little endian

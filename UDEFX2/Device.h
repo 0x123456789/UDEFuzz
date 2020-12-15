@@ -20,6 +20,9 @@ Environment:
 #include "Misc.h"
 #include "USBSCSI.h"
 
+#include "Descriptor.h"
+#include "Fuzzing.h"
+
 EXTERN_C_START
 
 
@@ -31,11 +34,12 @@ EXTERN_C_START
 #define BASE_SYMBOLIC_LINK_NAME                 L"\\DosDevices\\MBIMUDEClient"
 #define DeviceNameSize                          (sizeof(BASE_DEVICE_NAME) + MAX_SUFFIX_SIZE)
 #define SymLinkNameSize                         sizeof(BASE_SYMBOLIC_LINK_NAME)+MAX_SUFFIX_SIZE
+
+
 //
 // The device context performs the same job as
 // a WDM device extension in the driver frameworks
 //
-
 
 // controller context 
 typedef struct _UDECX_USBCONTROLLER_CONTEXT {
@@ -51,9 +55,14 @@ typedef struct _UDECX_USBCONTROLLER_CONTEXT {
     PUDECXUSBDEVICE_INIT  ChildDeviceInit;
     UDECXUSBDEVICE        ChildDevice;
     USHORT                DeviceUSBVersion;
+
+    FUZZING_CONTEXT FuzzingContext;
+    DESCRIPTORS Descriptors;
+
 } UDECX_USBCONTROLLER_CONTEXT, *PUDECX_USBCONTROLLER_CONTEXT;
 
 WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(UDECX_USBCONTROLLER_CONTEXT, GetUsbControllerContext);
+
 
 
 typedef struct _REQUEST_CONTEXT {
