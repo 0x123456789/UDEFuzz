@@ -1,3 +1,6 @@
+# About
+Initially this is fork of https://github.com/xxandy/USB_UDE_Sample. The goal of this project to use UDE for fuzzing purposes. The code is not stable and on active development
+
 # USB UDE Sample
 UDE (USB Device Emulation) Virtual USB device sample (hardware-less), with matching Host-Side drivers. Used as a USB study test bed. Can also be the starting point for developing other Virtual USB devices.
 
