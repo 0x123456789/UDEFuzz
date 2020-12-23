@@ -1,6 +1,18 @@
 # About
 Initially this is fork of https://github.com/xxandy/USB_UDE_Sample. The goal of this project to use UDE for fuzzing purposes. The code is not stable and on active development
 
+# What it can do now?
+
+Driver can pretend USB flash device do basic communication via SCSI protocol
+
+![SCSI Flash](https://user-images.githubusercontent.com/36066426/102280224-c70cec80-3f3d-11eb-9b25-c8b1ab94c8c1.png)
+
+Driver can pretend USB HID mouse device and generate interrupts to move cursor
+
+![HID MOUSE](https://user-images.githubusercontent.com/36066426/102279847-25859b00-3f3d-11eb-9d19-b00aeb2c1870.png)
+
+Driver can pretend default UDEFX2 device :)
+
 # USB UDE Sample
 UDE (USB Device Emulation) Virtual USB device sample (hardware-less), with matching Host-Side drivers. Used as a USB study test bed. Can also be the starting point for developing other Virtual USB devices.
 
