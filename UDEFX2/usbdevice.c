@@ -489,6 +489,7 @@ Usb_Destroy(
         UdecxUsbDeviceInitFree(pControllerContext->ChildDeviceInit);
         pControllerContext->ChildDeviceInit = NULL;
     }
+    pControllerContext->ChildDevice = NULL;
     LogError(TRACE_DEVICE, "Usb_Destroy ends successfully");
 
     return;

@@ -7,6 +7,11 @@
 #pragma comment(lib, "setupapi.lib")
 
 
+
+
+
+
+
 BOOL FindCurrentDriver(_In_ HDEVINFO Devs, _In_ PSP_DEVINFO_DATA DevInfo, _In_ PSP_DRVINFO_DATA DriverInfoData)
 /*++
 Routine Description:

@@ -260,6 +260,12 @@ BackChannelIoctl(
     switch (IoControlCode)
     {
     case IOCTL_UNPLUG_USB_DEVICE:
+        // if device already unplugged
+        if (pControllerContext->ChildDevice == NULL) {
+            status = STATUS_INVALID_DEVICE_STATE;
+            goto unplug_exit;
+        }
+
         status = Usb_Disconnect(ctrdevice);
         if (!NT_SUCCESS(status)) {
             TraceEvents(TRACE_LEVEL_ERROR,
@@ -269,6 +275,8 @@ BackChannelIoctl(
         else {
             Usb_Destroy(ctrdevice);
         }
+
+        unplug_exit:
         WdfRequestComplete(Request, status);
         handled = TRUE;
         break;
@@ -309,8 +317,6 @@ BackChannelIoctl(
             goto gg;
         }
 
-
-
         status = Usb_Initialize(
             ctrdevice,
             descriptorSet);
@@ -327,23 +333,6 @@ BackChannelIoctl(
                 TRACE_DEVICE,
                 "%!FUNC! Unable to plug-in USB device");
         }
-       /* status = Usb_CreateDeviceAndEndpoints(ctrdevice);
-        if (!NT_SUCCESS(status)) {
-            TraceEvents(TRACE_LEVEL_ERROR,
-                TRACE_DEVICE,
-                "%!FUNC! Unable to create USB device");
-        }
-        else {
-            UDECX_USB_DEVICE_PLUG_IN_OPTIONS  pluginOptions;
-            UDECX_USB_DEVICE_PLUG_IN_OPTIONS_INIT(&pluginOptions);
-            pluginOptions.Usb20PortNumber = 1;
-            status = UdecxUsbDevicePlugIn(pControllerContext->ChildDevice, &pluginOptions);
-            if (!NT_SUCCESS(status)) {
-                TraceEvents(TRACE_LEVEL_ERROR,
-                    TRACE_DEVICE,
-                    "%!FUNC! Unable to create USB device");
-            }
-        }*/
         gg:
         WdfRequestComplete(Request, status);
         handled = TRUE;
