@@ -46,6 +46,7 @@
     <ClCompile Include="Device.c" />
     <ClCompile Include="Driver.c" />
     <ClCompile Include="DriverInfo.c" />
+    <ClCompile Include="Fuzzer.c" />
     <ClCompile Include="Kingston.c" />
     <ClCompile Include="Misc.c" />
     <ClCompile Include="USBCom.c" />
@@ -65,6 +66,7 @@
     <ClInclude Include="Device.h" />
     <ClInclude Include="Driver.h" />
     <ClInclude Include="DriverInfo.h" />
+    <ClInclude Include="Fuzzer.h" />
     <ClInclude Include="Fuzzing.h" />
     <ClInclude Include="Misc.h" />
     <ClInclude Include="Public.h" />

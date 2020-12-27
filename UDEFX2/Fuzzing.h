@@ -17,7 +17,7 @@ typedef struct _FUZZING_CONTEXT {
     UCHAR PID[2];
     UCHAR VID[2];
     // current seed
-    UINT32 Seed;
+    UINT64 Seed;
     // helpfull field to understand with protocol under USB is used now
     MODE Mode;
     // idex of descriptor set which used at start

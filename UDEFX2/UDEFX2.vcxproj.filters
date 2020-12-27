@@ -87,6 +87,9 @@
     <ClInclude Include="Fuzzing.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Fuzzer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Device.c">
@@ -129,6 +132,9 @@
       <Filter>Header Files\Descriptors</Filter>
     </ClCompile>
     <ClCompile Include="USBHID.c">
+      <Filter>Resource Files\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Fuzzer.c">
       <Filter>Resource Files\Source Files</Filter>
     </ClCompile>
   </ItemGroup>

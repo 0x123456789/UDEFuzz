@@ -30,6 +30,21 @@ void EnumerateDevices(LPGUID interfaceGuid) {
 }
 
 
+void ByteFlipping(char* buffer, int len) {
+
+    int bytesFlip = 1;
+    for (int i = 0; i < bytesFlip; i++) {
+        int bytePos = 1 % len;
+        // flipping byte
+        buffer[bytePos] = ~buffer[bytePos];
+    }
+}
+
+void Mutate(char* buffer, int len) {
+    ByteFlipping(buffer, len);
+}
+
+
 
 
 //
@@ -73,6 +88,11 @@ DEFINE_GUID(GUID_DEVINTERFACE_HOSTUDE,
 #include <Usbiodef.h>
 
 int wmain(int argc, wchar_t* argv[]) {
+
+    char bb[3] = { 0x01, 0x02, 0x03 };
+
+    Mutate(bb, 3);
+
 
     HANDLE handle;
     // using this guid we can communicate with our driver via CreateFile for getting handle

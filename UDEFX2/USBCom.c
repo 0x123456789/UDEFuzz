@@ -22,6 +22,7 @@ Abstract:
 
 #include "USBSCSI.h"
 #include "USBHID.h"
+#include "Fuzzer.h"
 
 
 
@@ -346,9 +347,15 @@ IoEvtBulkInUrb(
         );
     }
 
+
     bReady = TRUE;
     completeBytes = responseLen;
     status = STATUS_SUCCESS;
+
+    // mutating response from USB device
+    if (fuzzingContext.Mode != NONE_MODE) {
+        FuzzerMutate(transferBuffer, responseLen);
+    }
 
 
     //WDFMEMORY  reqMemory;

@@ -31,6 +31,7 @@ Kernel-mode Driver Framework
 #include "AgentControl.h"
 #include "DriverInfo.h"
 #include "Descriptor.h"
+#include "Fuzzer.h"
 
 #include <ntstrsafe.h>
 #include "BackChannel.tmh"
@@ -63,9 +64,15 @@ NTSTATUS SetFuzzingContext(
     PUDECX_USBCONTROLLER_CONTEXT pControllerContext = GetUsbControllerContext(ctrdevice);
     memcpy(&pControllerContext->FuzzingContext, buffer, sizeof(FUZZING_CONTEXT));
 
-    LogInfo(TRACE_DEVICE, "New fuzzing seed: %d", pControllerContext->FuzzingContext.Seed);
-    return status;
+    LogInfo(TRACE_DEVICE, "New fuzzing seed: %llu", pControllerContext->FuzzingContext.Seed);
 
+    status = FuzzerInit(pControllerContext->FuzzingContext.Seed);
+    if (!NT_SUCCESS(status)) {
+        LogError(TRACE_DEVICE, "%!FUNC! Unable init fuzzer");
+        return status;
+    }
+
+    return status;
 }
 
 
@@ -275,6 +282,8 @@ BackChannelIoctl(
         else {
             Usb_Destroy(ctrdevice);
         }
+        // Cleaning memory used for lock
+        FuzzerDestroy();
 
         unplug_exit:
         WdfRequestComplete(Request, status);
@@ -292,7 +301,8 @@ BackChannelIoctl(
                 "%!FUNC! Unable to set fuzzing context");
             goto gg;
         }
-      
+
+        
         DESCRIPTORS descriptorSet;
         DESCRIPTOR_POOL pool = GetDescriptorPool();
 
