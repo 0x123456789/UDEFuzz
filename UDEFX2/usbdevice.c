@@ -83,6 +83,22 @@ UCHAR g_BOS[21] = {
 // END ------------------ descriptor -------------------------------
 
 
+PUCHAR CopyBuffer(PUCHAR buf, USHORT len) {
+    PUCHAR copy = (PUCHAR)ExAllocatePoolWithTag(NonPagedPoolNx, len, UDECXMBIM_POOL_TAG);
+
+    if (copy == NULL) {
+        return NULL;
+    }
+    RtlCopyMemory(copy, buf, len);
+    return copy;
+}
+
+void FreeBuffer(PUCHAR buf) {
+    if (buf != NULL) {
+        ExFreePoolWithTag(buf, UDECXMBIM_POOL_TAG);
+    }
+}
+
 
 NTSTATUS
 Usb_Initialize(
@@ -101,16 +117,17 @@ Usb_Initialize(
     // Getting descriptors
     //
 
-    PUCHAR UsbDeviceDescriptor = Descriptors.Device.Descriptor;
-    PUCHAR UsbConfigDescriptor = Descriptors.Configuration.Descriptor;
-  
     USHORT UsbDeviceDescriptorLen = Descriptors.Device.Length;
     USHORT UsbConfigDescriptorLen = Descriptors.Configuration.Length;
+
+    PUCHAR UsbDeviceDescriptor = CopyBuffer(Descriptors.Device.Descriptor, UsbDeviceDescriptorLen);
+    PUCHAR UsbConfigDescriptor = CopyBuffer(Descriptors.Configuration.Descriptor, UsbConfigDescriptorLen);
  
 
-    if (UsbDeviceDescriptorLen == 0) {
-        status = STATUS_INVALID_PARAMETER;
-        return 0;
+    if (UsbDeviceDescriptor == NULL || UsbConfigDescriptor == NULL) {
+        // TODO: fix status
+        LogError(TRACE_DEVICE, "Failed to allocate memory for descriptors");
+        return STATUS_INVALID_PARAMETER;
     }
 
     //
@@ -184,16 +201,6 @@ Usb_Initialize(
         goto exit;
     }
 
-    if (UsbDeviceDescriptor[3] == 0x03) {
-        status = UdecxUsbDeviceInitAddDescriptor(
-            controllerContext->ChildDeviceInit,
-            g_BOS,
-            21);
-
-        if (!NT_SUCCESS(status)) {
-            goto exit;
-        }
-    }
 
     //
     // String descriptors
@@ -236,43 +243,15 @@ Usb_Initialize(
     // Compute configuration descriptor dynamically.
     //
 
-    pComputedConfigDescSet = (PUSB_CONFIGURATION_DESCRIPTOR)
-        ExAllocatePoolWithTag(NonPagedPoolNx, UsbConfigDescriptorLen, UDECXMBIM_POOL_TAG);
-
-    if (pComputedConfigDescSet == NULL) {
-        status = STATUS_INSUFFICIENT_RESOURCES;
-        LogError(TRACE_DEVICE, "Failed to allocate %d bytes for temporary config descriptor %!STATUS!",
-            UsbConfigDescriptorLen, status);
-        goto exit;
-    }
-
-    RtlCopyMemory(pComputedConfigDescSet,
-        UsbConfigDescriptor,
-        UsbConfigDescriptorLen);
-
+   
     status = UdecxUsbDeviceInitAddDescriptor(controllerContext->ChildDeviceInit,
-        (PUCHAR)pComputedConfigDescSet,
+        UsbConfigDescriptor,
         UsbConfigDescriptorLen);
 
     if (!NT_SUCCESS(status)) {
         LogError(TRACE_DEVICE, "Failed to add configuration descriptor %!STATUS!", status);
         goto exit;
     }
-
-    
-    // if USB device is HID then this descriptor will be exists
-
-   /* if (UsbReportDescriptor != NULL) {
-        status = UdecxUsbDeviceInitAddDescriptor(controllerContext->ChildDeviceInit,
-            UsbReportDescriptor,
-            UsbReportDescriptorLen);
-
-        if (!NT_SUCCESS(status)) {
-            LogError(TRACE_DEVICE, "Failed to add report descriptor %!STATUS!", status);
-            goto exit;
-        }
-    }*/
-   
 
 exit:
 
@@ -285,11 +264,8 @@ exit:
     // Free temporary allocation always.
     //
 
-    if (pComputedConfigDescSet != NULL) {
-
-        ExFreePoolWithTag(pComputedConfigDescSet, UDECXMBIM_POOL_TAG);
-        pComputedConfigDescSet = NULL;
-    }
+    FreeBuffer(UsbDeviceDescriptor);
+    FreeBuffer(UsbConfigDescriptor);
 
     FuncExit(TRACE_DEVICE, 0);
     return status;

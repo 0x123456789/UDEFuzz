@@ -74,6 +74,29 @@ exit:
 }
 
 
+NTSTATUS CompleteRequestWithDescriptor(
+    _In_ WDFREQUEST Request,
+    _In_ DESCRIPTOR_INFO Descriptor
+)
+{
+    PUCHAR buffer;
+    ULONG length = 0;
+    NTSTATUS status = UdecxUrbRetrieveBuffer(Request, &buffer, &length);
+
+    if (!NT_SUCCESS(status)) {
+        LogError(TRACE_DEVICE, "Can't get buffer for descriptor: %!STATUS!", status);
+        return status;
+    }
+
+    if (length < Descriptor.Length) {
+        LogError(TRACE_DEVICE, "Buffer too small");
+        return STATUS_BUFFER_TOO_SMALL;
+    }
+    // copy report descriptor in buffer
+    memcpy(buffer, Descriptor.Descriptor, Descriptor.Length);
+    return STATUS_SUCCESS;
+}
+
 
 
 
@@ -87,7 +110,6 @@ IoEvtControlUrb(
     _In_ ULONG IoControlCode
 )
 {
-    PUCHAR buffer;
     WDF_USB_CONTROL_SETUP_PACKET setupPacket;
     NTSTATUS status;
     UNREFERENCED_PARAMETER(Queue);
@@ -116,35 +138,21 @@ IoEvtControlUrb(
             goto exit;
         }
 
-        // if Get descriptor request (0x06) && descriptor type is report descriptor (0x22)
-        // when send HID descriptor
-        if (setupPacket.Packet.bRequest == 0x06 && setupPacket.Packet.wValue.Bytes.HiByte == 0x22) {
-            LogInfo(TRACE_DEVICE, "[IoEvtControlUrb] Report descriptor is requested");
-            // check if driver now really emulating HID USB device
-            if (pBackChannelContext->FuzzingContext.Mode == HID_MOUSE_MODE) {
-                
-                ULONG length = 0;
-                DESCRIPTOR_INFO d = pBackChannelContext->Descriptors.Report;
-
-                status = UdecxUrbRetrieveBuffer(Request, &buffer, &length);
-
-                if (!NT_SUCCESS(status)) {
-                    LogError(TRACE_DEVICE, "Can't get buffer for report descriptor: %!STATUS!", status);
+        // if Get descriptor request (0x06)
+       
+        if (setupPacket.Packet.bRequest == 0x06) {
+            //  descriptor type is report descriptor (0x22)
+            if (setupPacket.Packet.wValue.Bytes.HiByte == 0x22) {
+                LogInfo(TRACE_DEVICE, "[IoEvtControlUrb] Report descriptor is requested");
+                // check if driver now really emulating HID USB device
+                if (pBackChannelContext->FuzzingContext.Mode == HID_MOUSE_MODE) {
+                    status = CompleteRequestWithDescriptor(Request, pBackChannelContext->Descriptors.Report);
                     UdecxUrbCompleteWithNtStatus(Request, status);
                     goto exit;
                 }
-
-                if (length < d.Length) {
-                    LogError(TRACE_DEVICE, "Buffer too small");
-                    UdecxUrbCompleteWithNtStatus(Request, status);
-                    goto exit;
+                else {
+                    LogError(TRACE_DEVICE, "report descriptor is requested, but mode not HID_MOUSE_MODE");
                 }
-
-                // copy report descriptor in buffer
-                memcpy(buffer, d.Descriptor, d.Length);
-            }
-            else {
-                LogError(TRACE_DEVICE, "report descriptor is requested, but mode not HID_MOUSE_MODE");
             }
         }
 
