@@ -321,6 +321,9 @@ BackChannelIoctl(
         case HID_MOUSE_MODE:
             descriptorSet = pool.Descriptors[HID_MOUSE_DESCRIPTOR_SET];
             break;
+        case HID_KEYBOARD_MODE:
+            descriptorSet = pool.Descriptors[HID_KEYBOARD_DESCRIPTOR_SET];
+            break;
         default:
             TraceEvents(TRACE_LEVEL_ERROR, TRACE_DEVICE, "%!FUNC!: Unknown device code");
             status = STATUS_INVALID_PARAMETER;

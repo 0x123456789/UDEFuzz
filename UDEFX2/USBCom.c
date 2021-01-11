@@ -144,8 +144,9 @@ IoEvtControlUrb(
             //  descriptor type is report descriptor (0x22)
             if (setupPacket.Packet.wValue.Bytes.HiByte == 0x22) {
                 LogInfo(TRACE_DEVICE, "[IoEvtControlUrb] Report descriptor is requested");
-                // check if driver now really emulating HID USB device
-                if (pBackChannelContext->FuzzingContext.Mode == HID_MOUSE_MODE) {
+                // check if driver now really emulating HID device
+                if (pBackChannelContext->FuzzingContext.Mode == HID_MOUSE_MODE ||
+                    pBackChannelContext->FuzzingContext.Mode == HID_KEYBOARD_MODE) {
                     status = CompleteRequestWithDescriptor(Request, pBackChannelContext->Descriptors.Report);
                     UdecxUrbCompleteWithNtStatus(Request, status);
                     goto exit;
@@ -452,34 +453,48 @@ IoEvtCancelInterruptInUrb(
 
 static VOID
 IoCompletePendingRequest(
-    _In_ WDFREQUEST request,
+    _In_ UDECXUSBDEVICE Device,
+    _In_ WDFREQUEST Request,
     _In_ DEVICE_INTR_FLAGS LatestStatus)
 {
     UNREFERENCED_PARAMETER(LatestStatus);
 
-    ULONG responseLen;
+    ULONG responseLen = 0;
     NTSTATUS status = STATUS_SUCCESS;
     PUCHAR transferBuffer;
     ULONG transferBufferLength;
+    PUSB_CONTEXT pUsbContext;
+    PUDECX_BACKCHANNEL_CONTEXT pBackChannelContext;
 
-    status = UdecxUrbRetrieveBuffer(request, &transferBuffer, &transferBufferLength);
+
+    pUsbContext = GetUsbDeviceContext(Device);
+    pBackChannelContext = GetBackChannelContext(pUsbContext->ControllerDevice);
+
+    status = UdecxUrbRetrieveBuffer(Request, &transferBuffer, &transferBufferLength);
     if (!NT_SUCCESS(status))
     {
         LogError(TRACE_DEVICE, "WdfRequest  %p unable to retrieve buffer %!STATUS!",
-            request, status);
+            Request, status);
         goto exit;
     }
 
-    LogInfo(TRACE_DEVICE, "Trying complete interrupt as MOUSE HID");
-    HIDHandleBulkInResponse(
-        transferBuffer,
-        transferBufferLength,
-        &responseLen);
+    if (pBackChannelContext->FuzzingContext.Mode == HID_MOUSE_MODE) {
+        HIDHandleMouseResponse(
+            transferBuffer,
+            transferBufferLength,
+            &responseLen);
+    }
 
-    UdecxUrbSetBytesCompleted(request, responseLen);
+    if (pBackChannelContext->FuzzingContext.Mode == HID_KEYBOARD_MODE) {
+        HIDHandleKeyboardResponse(
+            transferBuffer,
+            transferBufferLength,
+            &responseLen);
+    }
+    UdecxUrbSetBytesCompleted(Request, responseLen);
 
 exit:
-    UdecxUrbCompleteWithNtStatus(request, status);
+    UdecxUrbCompleteWithNtStatus(Request, status);
     return;
 
 }
@@ -496,7 +511,7 @@ Io_RaiseInterrupt(
     NTSTATUS status = STATUS_SUCCESS;
 
     pIoContext = WdfDeviceGetIoContext(Device);
-
+    
     status = WdfIoQueueRetrieveNextRequest( pIoContext->IntrDeferredQueue, &request);
 
     // no items in the queue?  it is safe to assume the device is sleeping
@@ -515,7 +530,7 @@ Io_RaiseInterrupt(
         LogWarning(TRACE_DEVICE, "[!] For USB 3.0 need may be need UdecxUsbDeviceSignalFunctionWake?");
         status = STATUS_SUCCESS;
     } else {
-        IoCompletePendingRequest(request, LatestStatus);
+        IoCompletePendingRequest(Device, request, LatestStatus);
     }
 
     return status;
@@ -572,7 +587,7 @@ IoEvtInterruptInUrb(
 
     if (bHasData)  {
         
-        IoCompletePendingRequest(Request, LatestStatus);
+        IoCompletePendingRequest(tgtDevice, Request, LatestStatus);
 
     } else {
         status = WdfRequestForwardToIoQueue(Request, pIoContext->IntrDeferredQueue);

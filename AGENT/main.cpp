@@ -112,7 +112,7 @@ int wmain(int argc, wchar_t* argv[]) {
             }
             break;
         //case L'f': GetDriverInfo(deviceGUID); break;
-        case L'i': GenerateInterrupt(deviceGUID); break;
+        case L'i': GenerateInterrupt(deviceGUID); GenerateInterrupt(deviceGUID); break;
 
             /*case 'l': mode = LINE_MODE; break;
             case 'w': mode = WORD_MODE; break;*/

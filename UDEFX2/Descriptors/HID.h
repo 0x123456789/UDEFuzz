@@ -3,4 +3,5 @@
 
 #include "Common.h"
 
-DESCRIPTORS GetHIDDevDescriptors();
+DESCRIPTORS GetHIDMouseDevDescriptors();
+DESCRIPTORS GetHIDKeyboardDevDescriptors();

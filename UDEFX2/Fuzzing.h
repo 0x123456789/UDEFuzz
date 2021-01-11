@@ -9,6 +9,7 @@ enum MODE {
     RESERVED_USB_30,    // value the same as KINGSTON_DESCRIPTOR_SET (now 3.0 unsupported)
     SCSI_MODE,          // value the same as FLASH_20_DESCRIPTOR_SET
     HID_MOUSE_MODE,     // value the same as HID_MOUSE_DESCRIPTOR_SET
+    HID_KEYBOARD_MODE   // value the same as HID_KEYBOARD_DESCRIPTOR_SET
 };
 
 

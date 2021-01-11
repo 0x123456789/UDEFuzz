@@ -181,7 +181,7 @@ void GenerateInterrupt(LPGUID interfaceGuid) {
             if (!DeviceIoControl(handle,
                 IOCTL_UDEFX2_GENERATE_INTERRUPT,
                 &f,                         // Ptr to InBuffer
-                sizeof(DEVICE_INTR_FLAGS),    // Length of InBuffer
+                sizeof(DEVICE_INTR_FLAGS),  // Length of InBuffer
                 NULL,                       // Ptr to OutBuffer
                 0,                          // Length of OutBuffer
                 &bytesReturned,             // BytesReturned
