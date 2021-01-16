@@ -8,16 +8,11 @@
 
 #include "Devices.h"
 
-
 #ifdef RELEASE
 #include "http.h"
 #endif // RELEASE
 
-
-
 #pragma comment(lib, "Cfgmgr32.lib")
-
-
 
 void EnumerateDevices(LPGUID interfaceGuid) {
     PZZWSTR devices = GetPresentDeviceList(interfaceGuid);
@@ -29,20 +24,6 @@ void EnumerateDevices(LPGUID interfaceGuid) {
     }
 }
 
-
-void ByteFlipping(char* buffer, int len) {
-
-    int bytesFlip = 1;
-    for (int i = 0; i < bytesFlip; i++) {
-        int bytePos = 1 % len;
-        // flipping byte
-        buffer[bytePos] = ~buffer[bytePos];
-    }
-}
-
-void Mutate(char* buffer, int len) {
-    ByteFlipping(buffer, len);
-}
 
 
 
@@ -87,12 +68,9 @@ DEFINE_GUID(GUID_DEVINTERFACE_HOSTUDE,
 
 #include <Usbiodef.h>
 
+
+
 int wmain(int argc, wchar_t* argv[]) {
-
-    char bb[3] = { 0x01, 0x02, 0x03 };
-
-    Mutate(bb, 3);
-
 
     HANDLE handle;
     // using this guid we can communicate with our driver via CreateFile for getting handle
@@ -113,6 +91,12 @@ int wmain(int argc, wchar_t* argv[]) {
             break;
         //case L'f': GetDriverInfo(deviceGUID); break;
         case L'i': GenerateInterrupt(deviceGUID); GenerateInterrupt(deviceGUID); break;
+        // Mutate descriptor, save PID VID
+        case L'a': AutoFuzzMode(TRUE, TRUE, FALSE); break;
+        // Mutate descriptor, doesn't save PID VID
+        case L'A': AutoFuzzMode(TRUE, FALSE, FALSE); break;
+        // Mutate only descriptors and use S2E for coverage
+        case L'd': DescriptorFuzzMode(ToDeviceCode(argv[optind][2])); break;
 
             /*case 'l': mode = LINE_MODE; break;
             case 'w': mode = WORD_MODE; break;*/

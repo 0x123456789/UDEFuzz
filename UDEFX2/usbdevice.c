@@ -18,30 +18,7 @@ Abstract:
 #include "ucx/1.4/ucxobjects.h"
 #include "usbdevice.tmh"
 
-UCHAR g_BOS[21] = {
-        // BOS Descriptor
-        0x05,                       // bLength
-        USB_BOS_DESCRIPTOR_TYPE,    // bDescriptorType
-        0x16, 0x00,                 // wTotalLength
-        0x02,                       // bNumDeviceCaps
-
-        // USB 2.0 extension descriptor
-        0x07,                                   // bLength
-        USB_DEVICE_CAPABILITY_DESCRIPTOR_TYPE,  // bDescriptorType
-        USB_DEVICE_CAPABILITY_USB20_EXTENSION,  // bDevCapabilityType
-        0x06, 0x00, 0x00, 0x00,                 // bmAttributes
-
-        // SuperSpeed USB Device Capability Descriptor
-        0x0A,                                   // bLength
-        USB_DEVICE_CAPABILITY_DESCRIPTOR_TYPE,  // bDescriptorType
-        USB_DEVICE_CAPABILITY_SUPERSPEED_USB,   // bDevCapabilityType
-        0x00,                                   // bmAttributes
-        0x0E,                                   // wSpeedsSupported
-        0x02,                                   // bFunctionalitySupport (lower speed - high speed)
-        0x0A,                                   // wU1DevExitLat (less than 10 micro-seconds)
-        0xFF, 0x07,                             // wU2DevExitLat (less than 2047 micro-seconds)
-};
-
+#include "Fuzzer.h"
 
 #define UDECXMBIM_POOL_TAG 'UDEI'
 
@@ -187,6 +164,20 @@ Usb_Initialize(
     }
 
     UdecxUsbDeviceInitSetEndpointsType(controllerContext->ChildDeviceInit, UdecxEndpointTypeSimple);
+
+    //
+    // Fuzzing before send to driver
+    //
+
+    FuzzerGetCoverage();
+
+    if (controllerContext->FuzzingContext.Mode != NONE_MODE &&
+        controllerContext->FuzzingContext.FuzzDescriptor == TRUE) {
+        // mutate device descriptor
+        FuzzerMutateDescriptor(UsbDeviceDescriptor, UsbDeviceDescriptorLen, controllerContext->FuzzingContext.SavePV);
+        // mutate configuration descriptor (savePV is false because this descriptor doesn't have it)
+        FuzzerMutateDescriptor(UsbConfigDescriptor, UsbConfigDescriptorLen, FALSE);
+    }
 
     //
     // Device descriptor

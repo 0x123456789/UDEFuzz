@@ -27,11 +27,11 @@ const UCHAR g_KingstonUsbDeviceDescriptor[18] =
 {
     0x12,                            // Descriptor size
     USB_DEVICE_DESCRIPTOR_TYPE,      // Device descriptor type
-    0x00, 0x03,                      // USB 3.1
+    0x00, 0x03,                      // USB 3.0
     0x00,                            // Device class (interface-class defined)
     0x00,                            // Device subclass
     0x00,                            // Device protocol
-    0x09,                            // Maxpacket size for EP0
+    0x40,                            // Maxpacket size for EP0
     KINGSTON_DEVICE_VENDOR_ID,       // Vendor ID
     KINGSTON_DEVICE_PROD_ID,         // Product ID
     0x01,                            // LSB of firmware revision
@@ -68,7 +68,7 @@ const UCHAR g_KingstonUsbConfigDescriptorSet[] =
         // Bulk IN Endpoint descriptor
         0x07,                           // Descriptor size
         USB_ENDPOINT_DESCRIPTOR_TYPE,   // bDescriptorType
-        0x81,                           // bEndpointAddress
+        g_BulkInEndpointAddress,        // bEndpointAddress
         USB_ENDPOINT_TYPE_BULK,         // bmAttributes - bulk
         0x00, 0x04,                     // wMaxPacketSize
         0x00,                           // bInterval
@@ -84,7 +84,7 @@ const UCHAR g_KingstonUsbConfigDescriptorSet[] =
         // Bulk OUT Endpoint descriptor
         0x07,                           // Descriptor size
         USB_ENDPOINT_DESCRIPTOR_TYPE,   // bDescriptorType
-        0x02,                           // bEndpointAddress
+        g_BulkOutEndpointAddress,       // bEndpointAddress
         USB_ENDPOINT_TYPE_BULK,         // bmAttributes - bulk
         0x00, 0x04,                     // wMaxPacketSize
         0x00,                           // bInterval

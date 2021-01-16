@@ -23,6 +23,12 @@ typedef struct _FUZZING_CONTEXT {
     MODE Mode;
     // idex of descriptor set which used at start
     UINT32 DescriptorSetIndx;
+    // Should fuzzing descriptor also (default false)
+    BOOLEAN FuzzDescriptor;
+    // Save PID&VID. if FuzzDescriptor is false  SavePV doesn't make sense
+    BOOLEAN SavePV;
+    // Fuzz only descriptors (need when using S2E)
+    BOOLEAN OnlyDesc;
 
 } FUZZING_CONTEXT, * PFUZZING_CONTEXT;
 

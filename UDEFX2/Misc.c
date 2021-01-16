@@ -238,3 +238,16 @@ Exit:
 
 
 
+LONGLONG ElaspedInMillisecond(LARGE_INTEGER start, LARGE_INTEGER end) {
+    LARGE_INTEGER mSec, currTimeStamp;
+    ULONG timeIncrement;
+
+    timeIncrement = KeQueryTimeIncrement();
+
+    KeQueryTickCount(&currTimeStamp);
+
+    // 1 millisecond is 1,000,000 nano seconds, but remember divide by 100 to account for 
+    // KeQueryTickCount granularity.
+    mSec.QuadPart = ((end.QuadPart - start.QuadPart) * timeIncrement) / 10000;
+    return mSec.QuadPart;
+}

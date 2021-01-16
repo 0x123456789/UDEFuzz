@@ -10,6 +10,12 @@
 
 #include "Devices.h"
 
+#include <vector>
+#include <iostream>
+#include <fstream>
+#include <time.h>
+#include <ctime>
+
 // This is the GUID for the USB device class
 DEFINE_GUID(GUID_DEVINTERFACE_USB_DEVICE, 
 	0xA5DCBF10L, 0x6530, 0x11D2, 0x90, 0x1F, 0x00, 0xC0, 0x4F, 0xB9, 0x51, 0xED);
@@ -124,6 +130,34 @@ void UnplugUSBDevice() {
 }
 
 
+void PlugInUSBDevice(HANDLE controllerHandle, USHORT deviceCode, UINT64 seed, BOOLEAN fuzzDesc, BOOLEAN savePV, BOOLEAN onlyDesc) {
+    DWORD bytesReturned = 0;
+    wprintf(L"[*] Selected device code: %d\n", deviceCode);
+    // getting fuzzing config for plugged-in device
+    FUZZING_CONTEXT context;
+    context.Seed = seed;
+    context.FuzzDescriptor = fuzzDesc;
+    context.SavePV = savePV;
+    context.S2EMode = onlyDesc;
+
+    // for simplicity modes have same values as device codes
+    context.Mode = (MODE)deviceCode;
+    if (!DeviceIoControl(controllerHandle,
+        IOCTL_PLUG_USB_DEVICE,
+        &context,                   // Ptr to InBuffer
+        sizeof(FUZZING_CONTEXT),    // Length of InBuffer
+        NULL,                       // Ptr to OutBuffer
+        0,                          // Length of OutBuffer
+        &bytesReturned,             // BytesReturned
+        0))                         // Ptr to Overlapped structure
+    {
+        wprintf(L"DeviceIoControl failed with error 0x%x\n", GetLastError());
+        return;
+    }
+    wprintf(L"Virtual USB device plugged successully\n");
+}
+
+
 void PlugInUSBDevice(LPGUID interfaceGuid, USHORT deviceCode) {
     wprintf(L"[*] Selected device code: %d\n", deviceCode);
 
@@ -140,6 +174,9 @@ void PlugInUSBDevice(LPGUID interfaceGuid, USHORT deviceCode) {
             FUZZING_CONTEXT context;
             // just magic constant :)
             context.Seed = 112233;
+            context.FuzzDescriptor = TRUE;
+            context.SavePV = TRUE;
+
             // for simplicity modes have same values as device codes
             context.Mode = (MODE)deviceCode;
 
@@ -165,6 +202,27 @@ void PlugInUSBDevice(LPGUID interfaceGuid, USHORT deviceCode) {
     else {
         return;
     }
+}
+
+
+
+void GenerateInterrupt(HANDLE controllerHandle) {
+    DEVICE_INTR_FLAGS f = 0xaa;
+    DWORD bytesReturned = 0;
+
+    if (!DeviceIoControl(controllerHandle,
+        IOCTL_UDEFX2_GENERATE_INTERRUPT,
+        &f,                         // Ptr to InBuffer
+        sizeof(DEVICE_INTR_FLAGS),  // Length of InBuffer
+        NULL,                       // Ptr to OutBuffer
+        0,                          // Length of OutBuffer
+        &bytesReturned,             // BytesReturned
+        0))                         // Ptr to Overlapped structure
+    {
+        wprintf(L"DeviceIoControl failed with error 0x%x\n", GetLastError());
+        return;
+    }
+    // wprintf(L"GenerateInterrupt successully\n");
 }
 
 void GenerateInterrupt(LPGUID interfaceGuid) {
@@ -270,3 +328,101 @@ HANDLE RunUSBDeviceCheckerThread(UINT8 deviceCode) {
 }
 
 
+std::vector<HANDLE> GetDeviceHandles(PZZWSTR devices) {
+    std::vector<HANDLE> v;
+    PWSTR device = devices;
+   
+    while (*device != UNICODE_NULL) {
+        HANDLE h = OpenDevice(device);
+        if (h != INVALID_HANDLE_VALUE) {
+            v.push_back(h);
+        }
+        else {
+            wprintf(L"Failed to open device, error - %d\n", GetLastError());
+        }
+        device = device + wcslen(device) + 1;
+    }
+    return v;
+}
+
+
+
+const std::string currentDateTime() {
+    time_t     now = time(0);
+    struct tm  tstruct;
+    char       buf[80];
+    tstruct = *localtime(&now);
+    // Visit http://en.cppreference.com/w/cpp/chrono/c/strftime
+    // for more information about date/time format
+    strftime(buf, sizeof(buf), "%Y-%m-%d.%X", &tstruct);
+
+    return buf;
+}
+
+
+void WriteToSeedLog(UINT64 seed) {
+    std::ofstream file;
+    file.open("seed_log.txt", std::ios::out | std::ios::app);
+    file << currentDateTime() << " " << seed << std::endl;
+    file.close();
+}
+
+// Fuzzing descriptors using S2E coverage on kernel mode
+// This mode should use only one controller because only one S2E plugin work
+void DescriptorFuzzMode(UINT8 deviceCode) {
+    std::srand(std::time(nullptr));
+    // get current connected and working USB devices
+    PZZWSTR devices = GetPresentDeviceList((LPGUID)&GUID_DEVINTERFACE_UDE_BACKCHANNEL);
+    std::vector<HANDLE> handles = GetDeviceHandles(devices);
+
+    if (handles.size() == 0) {
+        wprintf(L"No controllers found\n");
+        return;
+    }
+
+    while (TRUE) {
+        UINT64 seed = std::rand();
+        WriteToSeedLog(seed);
+        // this will unplug USB device from all controllers
+        UnplugUSBDevice();
+
+        PlugInUSBDevice(handles[0], deviceCode, seed, TRUE, TRUE, TRUE);
+        // wait for enumeration and getting fuzzing
+        Sleep(100);
+    }
+}
+void AutoFuzzMode(BOOLEAN fuzzDesc, BOOLEAN savePV) {
+    std::srand(std::time(nullptr));
+    // get current connected and working USB devices
+    PZZWSTR devices = GetPresentDeviceList((LPGUID)&GUID_DEVINTERFACE_UDE_BACKCHANNEL);
+    std::vector<HANDLE> handles = GetDeviceHandles(devices);
+
+    if (handles.size() == 0) {
+        wprintf(L"No controllers found\n");
+        return;
+    }
+
+    // infinity fuzz 
+    while (TRUE) {
+        UINT64 seed = std::rand();
+        WriteToSeedLog(seed);
+        // this will unplug USB device from all controllers
+        UnplugUSBDevice();
+        // each controller device will plug different USB device
+        for (int i = 0; i < handles.size(); i++) {
+            // Plug again (i+1 because mode 0 not for fuzzing)
+            PlugInUSBDevice(handles[i], i + 1, seed, fuzzDesc, savePV, FALSE);
+        }
+        // sleep while enumeration
+        Sleep(700);
+        
+        // repeatedly send signal for all
+        for (int k = 0; k < 50; k++) {
+            for (int i = 0; i < handles.size(); i++) {
+                // trying to send interrupts
+                GenerateInterrupt(handles[i]);
+            }
+            Sleep(2);
+        }
+    }
+}

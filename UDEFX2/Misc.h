@@ -17,6 +17,7 @@ Abstract:
 #include "trace.h"
 
 
+LONGLONG ElaspedInMillisecond(LARGE_INTEGER start, LARGE_INTEGER end);
 
 #define MINLEN(__a, __b)  ( ((__a) < (__b)) ? (__a) : (__b) )
 

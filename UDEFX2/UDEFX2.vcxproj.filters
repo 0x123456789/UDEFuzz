@@ -138,4 +138,9 @@
       <Filter>Resource Files\Source Files</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <MASM Include="s2e.asm">
+      <Filter>Resource Files\Source Files</Filter>
+    </MASM>
+  </ItemGroup>
 </Project>

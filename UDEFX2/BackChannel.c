@@ -71,7 +71,6 @@ NTSTATUS SetFuzzingContext(
         LogError(TRACE_DEVICE, "%!FUNC! Unable init fuzzer");
         return status;
     }
-
     return status;
 }
 
@@ -273,6 +272,7 @@ BackChannelIoctl(
             goto unplug_exit;
         }
 
+
         status = Usb_Disconnect(ctrdevice);
         if (!NT_SUCCESS(status)) {
             TraceEvents(TRACE_LEVEL_ERROR,
@@ -283,7 +283,7 @@ BackChannelIoctl(
             Usb_Destroy(ctrdevice);
         }
         // Cleaning memory used for lock
-        FuzzerDestroy();
+        // FuzzerDestroy();
 
         unplug_exit:
         WdfRequestComplete(Request, status);

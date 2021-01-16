@@ -25,6 +25,29 @@ Abstract:
 #include "Fuzzer.h"
 
 
+UCHAR g_BOS[] = {
+    // BOS Descriptor
+    0x05,                       // bLength
+    USB_BOS_DESCRIPTOR_TYPE,    // bDescriptorType
+    0x16, 0x00,                 // wTotalLength
+    0x02,                       // bNumDeviceCaps
+
+    // USB 2.0 extension descriptor
+    0x07,                                   // bLength
+    USB_DEVICE_CAPABILITY_DESCRIPTOR_TYPE,  // bDescriptorType
+    USB_DEVICE_CAPABILITY_USB20_EXTENSION,  // bDevCapabilityType
+    0x02, 0x00, 0x00, 0x00,                 // bmAttributes
+
+    // SuperSpeed USB Device Capability Descriptor
+    0x0A,                                   // bLength
+    USB_DEVICE_CAPABILITY_DESCRIPTOR_TYPE,  // bDescriptorType
+    USB_DEVICE_CAPABILITY_SUPERSPEED_USB,   // bDevCapabilityType
+    0x00,                                   // bmAttributes
+    0x0E, 0x00,                             // wSpeedsSupported
+    0x03,                                   // bFunctionalitySupport (lower speed - high speed)
+    0x00,                                   // wU1DevExitLat (less than 10 micro-seconds)
+    0x00, 0x00,                             // wU2DevExitLat (less than 2047 micro-seconds)
+};
 
 
 typedef struct _ENDPOINTQUEUE_CONTEXT {
@@ -94,6 +117,8 @@ NTSTATUS CompleteRequestWithDescriptor(
     }
     // copy report descriptor in buffer
     memcpy(buffer, Descriptor.Descriptor, Descriptor.Length);
+    // TODO: if we not wan't to mutate?
+    FuzzerMutateDescriptor(buffer, Descriptor.Length, FALSE);
     return STATUS_SUCCESS;
 }
 
@@ -152,8 +177,23 @@ IoEvtControlUrb(
                     goto exit;
                 }
                 else {
-                    LogError(TRACE_DEVICE, "report descriptor is requested, but mode not HID_MOUSE_MODE");
+                    LogError(TRACE_DEVICE, "report descriptor is requested, but mode not HID_MODE");
                 }
+            }
+
+            // descriptor type is BOS descriptor (0x0F)
+            if (setupPacket.Packet.wValue.Bytes.HiByte == 0x0F) {
+                LogInfo(TRACE_DEVICE, "[IoEvtControlUrb] BOS descriptor is requested");
+                // TODO: 
+                // now we have only one BOS descriptor which will be send to each BOS request, so we just use it
+                // This is dirty and fast solution and need refactoring
+                DESCRIPTOR_INFO desc;
+                desc.Descriptor = (PUCHAR)g_BOS;
+                desc.Length = 22;
+
+                status = CompleteRequestWithDescriptor(Request, desc);
+                UdecxUrbCompleteWithNtStatus(Request, status);
+                goto exit;
             }
         }
 
@@ -233,7 +273,7 @@ IoEvtBulkOutUrb(
         LogInfo(TRACE_DEVICE, "[SCSI] LastSCSIRequest handled: %d", pBackChannelContext->LastSCSIRequest.Handled);
     }
     
-   
+    
 
     //if (1) {
     //    PVOID gg = ExAllocatePool(PagedPool, transferBufferLength + 1);
@@ -347,7 +387,9 @@ IoEvtBulkInUrb(
         transferBuffer[0], transferBuffer[1], transferBuffer[2], transferBuffer[3]);*/
 
 
-    if (fuzzingContext.Mode == SCSI_MODE) {
+    // TODO: RESERVED_USB_30 will be deleted in future,
+    // now RESERVED_USB_30 is a Kingston flash which is also use SCSI
+    if (fuzzingContext.Mode == SCSI_MODE || fuzzingContext.Mode == RESERVED_USB_30) {
         SCSIHandleBulkInResponse(
             &pBackChannelContext->LastSCSIRequest,
             transferBuffer,
@@ -491,7 +533,13 @@ IoCompletePendingRequest(
             transferBufferLength,
             &responseLen);
     }
+
+    if (pBackChannelContext->FuzzingContext.Mode != NONE_MODE) {
+        FuzzerMutate(transferBuffer, responseLen);
+    }
+   
     UdecxUrbSetBytesCompleted(Request, responseLen);
+
 
 exit:
     UdecxUrbCompleteWithNtStatus(Request, status);
