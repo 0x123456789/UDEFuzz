@@ -169,14 +169,22 @@ Usb_Initialize(
     // Fuzzing before send to driver
     //
 
-    FuzzerGetCoverage();
-
+ 
     if (controllerContext->FuzzingContext.Mode != NONE_MODE &&
         controllerContext->FuzzingContext.FuzzDescriptor == TRUE) {
         // mutate device descriptor
         FuzzerMutateDescriptor(UsbDeviceDescriptor, UsbDeviceDescriptorLen, controllerContext->FuzzingContext.SavePV);
+
+        if (controllerContext->FuzzingContext.OnlyDesc) {
+            // we will mutate value what get new coverage on last step
+            FuzzerGetOldCaseIfCoverageChanged(UsbConfigDescriptor, UsbConfigDescriptorLen);
+        }
+
         // mutate configuration descriptor (savePV is false because this descriptor doesn't have it)
         FuzzerMutateDescriptor(UsbConfigDescriptor, UsbConfigDescriptorLen, FALSE);
+
+        // saving final mutating case
+        FuzzerSaveCase(UsbConfigDescriptor, UsbConfigDescriptorLen);
     }
 
     //

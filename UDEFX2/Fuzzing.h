@@ -6,17 +6,15 @@
 
 enum MODE {
     NONE_MODE,          // value the same as DEFAULT_DESCRIPTOR_SET
-    RESERVED_USB_30,    // value the same as KINGSTON_DESCRIPTOR_SET (now 3.0 unsupported)
+    RESERVED_USB_30,    // value the same as KINGSTON_DESCRIPTOR_SET
     SCSI_MODE,          // value the same as FLASH_20_DESCRIPTOR_SET
     HID_MOUSE_MODE,     // value the same as HID_MOUSE_DESCRIPTOR_SET
-    HID_KEYBOARD_MODE   // value the same as HID_KEYBOARD_DESCRIPTOR_SET
+    HID_KEYBOARD_MODE,  // value the same as HID_KEYBOARD_DESCRIPTOR_SET
+    HID_JOYSTICK_MODE   // value the same as HID_JOYSTICK_DESCRIPTOR_SET
 };
 
 
 typedef struct _FUZZING_CONTEXT {
-    // vid&pid pair we want to fuzz now 
-    UCHAR PID[2];
-    UCHAR VID[2];
     // current seed
     UINT64 Seed;
     // helpfull field to understand with protocol under USB is used now

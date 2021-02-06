@@ -171,7 +171,8 @@ IoEvtControlUrb(
                 LogInfo(TRACE_DEVICE, "[IoEvtControlUrb] Report descriptor is requested");
                 // check if driver now really emulating HID device
                 if (pBackChannelContext->FuzzingContext.Mode == HID_MOUSE_MODE ||
-                    pBackChannelContext->FuzzingContext.Mode == HID_KEYBOARD_MODE) {
+                    pBackChannelContext->FuzzingContext.Mode == HID_KEYBOARD_MODE ||
+                    pBackChannelContext->FuzzingContext.Mode == HID_JOYSTICK_MODE) {
                     status = CompleteRequestWithDescriptor(Request, pBackChannelContext->Descriptors.Report);
                     UdecxUrbCompleteWithNtStatus(Request, status);
                     goto exit;
@@ -404,7 +405,7 @@ IoEvtBulkInUrb(
     status = STATUS_SUCCESS;
 
     // mutating response from USB device
-    if (fuzzingContext.Mode != NONE_MODE) {
+    if (fuzzingContext.Mode != NONE_MODE && !fuzzingContext.OnlyDesc) {
         FuzzerMutate(transferBuffer, responseLen);
     }
 
@@ -534,7 +535,7 @@ IoCompletePendingRequest(
             &responseLen);
     }
 
-    if (pBackChannelContext->FuzzingContext.Mode != NONE_MODE) {
+    if (pBackChannelContext->FuzzingContext.Mode != NONE_MODE && !pBackChannelContext->FuzzingContext.OnlyDesc) {
         FuzzerMutate(transferBuffer, responseLen);
     }
    

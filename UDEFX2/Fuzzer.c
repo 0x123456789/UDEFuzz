@@ -7,16 +7,19 @@
 #include <s2e.h>
 
 
-#define MAX_BITS_FLIPPING 4
-#define MAX_BYTES_FLIPPING 4
+#define MAX_BITS_FLIPPING 32
+#define MAX_BYTES_FLIPPING 8
 #define MAX_MUTATIONS 1
 
 
 static WDFSPINLOCK sync = NULL;
 
 static UINT64 next = 1;
-static UINT32 LastCoverage = 0;
+static UINT32 MaxCoverage = 0;
 
+// now all descriptors less than 100 bytes
+static UCHAR lastDescriptor[100];
+static UINT32 lastDescriptorLen;
 
 // m = 4294967296 = 2^32
 // c = 3
@@ -72,7 +75,53 @@ void KnownBytes(PUCHAR buffer, int len) {
 }
 
 
-void FuzzerMutateDescriptor(PUCHAR buffer, int len, BOOLEAN savePV, BOOLEAN onlyDesc) {
+void FuzzerSaveCase(PUCHAR buffer, int len) {
+	if (len == 0) {
+		return;
+	}
+
+	// save it as last descriptor to check coverage
+	memcpy(lastDescriptor, buffer, len);
+	lastDescriptorLen = len;
+}
+
+// coverage related stuff is experimental and used now only for configuration descriptor fuzzing
+
+UINT32 FuzzerGetCoverage() {
+
+	S2E_GET_COVERAGE cmd;
+	// send back only for debugging purpoces
+	cmd.BlocksCovered = MaxCoverage;
+
+	DbgPrint("Invoking plugin...");
+	S2EInvokePlugin("TranslationBlockCoverage", &cmd, sizeof(S2E_GET_COVERAGE));
+	DbgPrint("Blocks covered: %d", cmd.BlocksCovered);
+
+	return cmd.BlocksCovered;
+}
+
+
+
+void FuzzerGetOldCaseIfCoverageChanged(PUCHAR buffer, UINT32 len) {
+	// check previous
+	UINT32 coverage = FuzzerGetCoverage();
+	// this means last changes get new effect
+	// we trying to mutate it
+	if (coverage > MaxCoverage) {
+		MaxCoverage = coverage;
+		
+		if (len >= lastDescriptorLen) {
+			memcpy(buffer, lastDescriptor, lastDescriptorLen);
+		}
+		else {
+			// just do nothing for now
+		}
+	}
+
+
+}
+
+void FuzzerMutateDescriptor(PUCHAR buffer, int len, BOOLEAN savePV) {
 	
 	UCHAR VIDPID[4];
 	
@@ -80,13 +129,7 @@ void FuzzerMutateDescriptor(PUCHAR buffer, int len, BOOLEAN savePV, BOOLEAN only
 		return;
 	}
 
-	// check current coverage
-	UINT32 coverage = FuzzerGetCoverage();
-	if (coverage > LastCoverage) {
-		LastCoverage = coverage;
-
-	}
-
+	
 	VIDPID[0] = buffer[8];
 	VIDPID[1] = buffer[9];
 
@@ -110,6 +153,9 @@ void FuzzerMutate(PUCHAR buffer, int len) {
 		return;
 	}
 
+	// print last coverage to S2E console output
+	FuzzerGetCoverage();
+
 	for (int i = 0; i < MAX_MUTATIONS; i++) {
 		switch (NextRand() % 3)
 		{
@@ -129,18 +175,6 @@ void FuzzerMutate(PUCHAR buffer, int len) {
 }
 
 
-UINT32 FuzzerGetCoverage() {
-
-	S2E_GET_COVERAGE cmd;
-	// send back only for debugging purpoces
-	cmd.BlocksCovered = LastCoverage;
-
-	DbgPrint("Invoking plugin...");
-	S2EInvokePlugin("TranslationBlockCoverage", &cmd, sizeof(S2E_GET_COVERAGE));
-	DbgPrint("Blocks covered: %d", cmd.BlocksCovered);
-
-	return cmd.BlocksCovered;
-}
 
 
 // now we just init our lock to syncronize random number generation

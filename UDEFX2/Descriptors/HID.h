@@ -5,3 +5,4 @@
 
 DESCRIPTORS GetHIDMouseDevDescriptors();
 DESCRIPTORS GetHIDKeyboardDevDescriptors();
+DESCRIPTORS GetHIDJoystickDevDescriptors();

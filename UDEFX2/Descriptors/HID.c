@@ -15,6 +15,104 @@
 #define A4_TECH_VENDOR_ID 0xDA, 0x09  // little endian
 #define A4_TECH_PRODUCT_ID 0x60, 0x02 // little endian
 
+// Joystick
+#define ATMEL_VENDOR_ID 0xEB, 0x03   // little endian
+#define ATMEL_PRODUCT_ID 0x43, 0x20 // little endian
+
+
+
+const UCHAR g_HIDJoystickDeviceDescriptor[18] =
+{
+    0x12,                            // Descriptor size
+    USB_DEVICE_DESCRIPTOR_TYPE,      // Device descriptor type
+    0x10, 0x01,                      // USB 2.0
+    0x00,                            // Device class (interface-class defined)
+    0x00,                            // Device subclass
+    0x00,                            // Device protocol
+    0x10,                            // Maxpacket size for EP0
+    ATMEL_VENDOR_ID,                 // Vendor ID
+    ATMEL_PRODUCT_ID,                // Product ID
+    0x00,                            // LSB of firmware revision
+    0x00,                            // MSB of firmware revision
+    0x00,                            // Manufacture string index
+    0x00,                            // Product string index
+    0x00,                            // Serial number string index
+    0x01                             // Number of configurations
+};
+
+
+const UCHAR g_HIDJoystickUsbConfigDescriptorSet[] =
+{
+    // Configuration Descriptor Type
+    0x9,                               // Descriptor Size
+    USB_CONFIGURATION_DESCRIPTOR_TYPE, // Configuration Descriptor Type
+    0x22, 0x00,                        // Length of this descriptor and all sub descriptors
+    0x01,                              // Number of interfaces
+    0x01,                              // Configuration number
+    0x00,                              // Configuration string index
+    0xA0,                              // Config characteristics - Bus Powered, Remote Wakeup
+    0x32,                              // Max power consumption of device (in 2mA unit) : 100 mA
+
+        // Interface  descriptor
+        0x9,                                      // Descriptor size
+        USB_INTERFACE_DESCRIPTOR_TYPE,            // Interface Association Descriptor Type
+        0,                                        // bInterfaceNumber
+        0,                                        // bAlternateSetting
+        1,                                        // bNumEndpoints
+        0x03,                                     // bInterfaceClass (HID)
+        0x00,                                     // bInterfaceSubClass 
+        0x00,                                     // bInterfaceProtocol (None)
+        0x00,                                     // iInterface
+
+        // HID Descriptor
+        0x09,       // Descriptor size
+        0x21,       // bDescriptorType (HID)
+        0x10, 0x01, // HID Class Spec Version
+        0x00,       // bCountryCode
+        0x01,       // bNumDescriptors
+        0x22,       // bDescriptorType (Report)
+        0x30, 0x00, // wDescriptorLength
+
+        // Interrupt IN endpoint descriptor
+        0x07,                           // Descriptor size 
+        USB_ENDPOINT_DESCRIPTOR_TYPE,   // Descriptor type
+        g_InterruptEndpointAddress,     // Endpoint address and description
+        USB_ENDPOINT_TYPE_INTERRUPT,    // bmAttributes - interrupt
+        0x08, 0x00,                     // Max packet size = 8 bytes
+        0x0A                            // Servicing interval for interrupt (10 ms/1 frame)
+};
+
+const UCHAR g_HIDJoystickUsbReportDescriptor[] =
+{
+    0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)
+    0x09, 0x05,                    // USAGE (Game Pad)
+    0xa1, 0x01,                    // COLLECTION (Application)
+    0xa1, 0x00,                    //   COLLECTION (Physical)
+    0x85, 0x04,                    //     REPORT_ID (4)
+    0x05, 0x09,                    //     USAGE_PAGE (Button)
+    0x19, 0x01,                    //     USAGE_MINIMUM (Button 1)
+    0x29, 0x10,                    //     USAGE_MAXIMUM (Button 16)
+    0x15, 0x00,                    //     LOGICAL_MINIMUM (0)
+    0x25, 0x01,                    //     LOGICAL_MAXIMUM (1)
+    0x95, 0x10,                    //     REPORT_COUNT (16)
+    0x75, 0x01,                    //     REPORT_SIZE (1)
+    0x81, 0x02,                    //     INPUT (Data,Var,Abs)
+    0x05, 0x01,                    //     USAGE_PAGE (Generic Desktop)
+    0x09, 0x30,                    //     USAGE (X)
+    0x09, 0x31,                    //     USAGE (Y)
+    0x09, 0x32,                    //     USAGE (Z)
+    0x09, 0x33,                    //     USAGE (Rx)
+    0x15, 0x81,                    //     LOGICAL_MINIMUM (-127)
+    0x25, 0x7f,                    //     LOGICAL_MAXIMUM (127)
+    0x75, 0x08,                    //     REPORT_SIZE (8)
+    0x95, 0x04,                    //     REPORT_COUNT (4)
+    0x81, 0x02,                    //     INPUT (Data,Var,Abs)
+    0xc0,                          //     END_COLLECTION
+    0xc0                           // END_COLLECTION
+};
+
+// =================================================================================================================
+
 const UCHAR g_HIDKeyboardDeviceDescriptor[18] =
 {
     0x12,                            // Descriptor size
@@ -246,6 +344,22 @@ DESCRIPTORS GetHIDKeyboardDevDescriptors() {
 
     d.Report.Descriptor = (PUCHAR)g_HIDKeyboardUsbReportDescriptor;
     d.Report.Length = sizeof(g_HIDKeyboardUsbReportDescriptor);
+
+    return d;
+}
+
+DESCRIPTORS GetHIDJoystickDevDescriptors() {
+
+    DESCRIPTORS d;
+
+    d.Device.Descriptor = (PUCHAR)g_HIDJoystickDeviceDescriptor;
+    d.Device.Length = sizeof(g_HIDJoystickDeviceDescriptor);
+
+    d.Configuration.Descriptor = (PUCHAR)g_HIDJoystickUsbConfigDescriptorSet;
+    d.Configuration.Length = sizeof(g_HIDJoystickUsbConfigDescriptorSet);
+
+    d.Report.Descriptor = (PUCHAR)g_HIDJoystickUsbReportDescriptor;
+    d.Report.Length = sizeof(g_HIDJoystickUsbReportDescriptor);
 
     return d;
 }

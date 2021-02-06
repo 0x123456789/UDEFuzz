@@ -138,7 +138,7 @@ void PlugInUSBDevice(HANDLE controllerHandle, USHORT deviceCode, UINT64 seed, BO
     context.Seed = seed;
     context.FuzzDescriptor = fuzzDesc;
     context.SavePV = savePV;
-    context.S2EMode = onlyDesc;
+    context.OnlyDesc = onlyDesc;
 
     // for simplicity modes have same values as device codes
     context.Mode = (MODE)deviceCode;
@@ -176,6 +176,7 @@ void PlugInUSBDevice(LPGUID interfaceGuid, USHORT deviceCode) {
             context.Seed = 112233;
             context.FuzzDescriptor = TRUE;
             context.SavePV = TRUE;
+            context.OnlyDesc = FALSE;
 
             // for simplicity modes have same values as device codes
             context.Mode = (MODE)deviceCode;
@@ -391,7 +392,7 @@ void DescriptorFuzzMode(UINT8 deviceCode) {
         Sleep(100);
     }
 }
-void AutoFuzzMode(BOOLEAN fuzzDesc, BOOLEAN savePV) {
+void AutoFuzzMode(BOOLEAN fuzzDesc, BOOLEAN savePV, USHORT deviceCode) {
     std::srand(std::time(nullptr));
     // get current connected and working USB devices
     PZZWSTR devices = GetPresentDeviceList((LPGUID)&GUID_DEVINTERFACE_UDE_BACKCHANNEL);
@@ -410,6 +411,11 @@ void AutoFuzzMode(BOOLEAN fuzzDesc, BOOLEAN savePV) {
         UnplugUSBDevice();
         // each controller device will plug different USB device
         for (int i = 0; i < handles.size(); i++) {
+            if (deviceCode != 0) {
+                PlugInUSBDevice(handles[i], deviceCode, seed, fuzzDesc, savePV, FALSE);
+                continue;
+            }
+
             // Plug again (i+1 because mode 0 not for fuzzing)
             PlugInUSBDevice(handles[i], i + 1, seed, fuzzDesc, savePV, FALSE);
         }

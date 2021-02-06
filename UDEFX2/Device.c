@@ -235,12 +235,6 @@ Return Value:
 	pControllerContext->FuzzingContext.Mode = NONE_MODE;
 	pControllerContext->FuzzingContext.DescriptorSetIndx = DEFAULT_DESCRIPTOR_SET;
 
-	pControllerContext->FuzzingContext.VID[0] = desc.Device.Descriptor[8];
-	pControllerContext->FuzzingContext.VID[1] = desc.Device.Descriptor[9];
-	
-	pControllerContext->FuzzingContext.PID[0] = desc.Device.Descriptor[10];
-	pControllerContext->FuzzingContext.PID[1] = desc.Device.Descriptor[11];
-
 	//
 	// Initialize virtual USB device software objects.
 	//

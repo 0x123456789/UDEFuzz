@@ -92,9 +92,9 @@ int wmain(int argc, wchar_t* argv[]) {
         //case L'f': GetDriverInfo(deviceGUID); break;
         case L'i': GenerateInterrupt(deviceGUID); GenerateInterrupt(deviceGUID); break;
         // Mutate descriptor, save PID VID
-        case L'a': AutoFuzzMode(TRUE, TRUE, FALSE); break;
+        case L'a': AutoFuzzMode(TRUE, TRUE, ToDeviceCode(argv[optind][2])); break;
         // Mutate descriptor, doesn't save PID VID
-        case L'A': AutoFuzzMode(TRUE, FALSE, FALSE); break;
+        case L'A': AutoFuzzMode(TRUE, FALSE, ToDeviceCode(argv[optind][2])); break;
         // Mutate only descriptors and use S2E for coverage
         case L'd': DescriptorFuzzMode(ToDeviceCode(argv[optind][2])); break;
 

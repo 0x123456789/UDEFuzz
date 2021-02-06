@@ -324,6 +324,9 @@ BackChannelIoctl(
         case HID_KEYBOARD_MODE:
             descriptorSet = pool.Descriptors[HID_KEYBOARD_DESCRIPTOR_SET];
             break;
+        case HID_JOYSTICK_MODE:
+            descriptorSet = pool.Descriptors[HID_JOYSTICK_DESCRIPTOR_SET];
+            break;
         default:
             TraceEvents(TRACE_LEVEL_ERROR, TRACE_DEVICE, "%!FUNC!: Unknown device code");
             status = STATUS_INVALID_PARAMETER;
