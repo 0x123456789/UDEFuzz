@@ -26,16 +26,8 @@ Return Value:
 --*/
 {
     SP_DEVINSTALL_PARAMS deviceInstallParams;
-    WCHAR SectionName[LINE_LEN];
-    WCHAR DrvDescription[LINE_LEN];
-    WCHAR MfgName[LINE_LEN];
-    WCHAR ProviderName[LINE_LEN];
     HKEY hKey = NULL;
-    DWORD RegDataLength;
-    DWORD RegDataType;
-    DWORD c;
     BOOL match = FALSE;
-    long regerr;
 
     ZeroMemory(&deviceInstallParams, sizeof(deviceInstallParams));
     deviceInstallParams.cbSize = sizeof(SP_DEVINSTALL_PARAMS);
