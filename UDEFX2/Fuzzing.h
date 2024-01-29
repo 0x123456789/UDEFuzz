@@ -4,7 +4,7 @@
 
 // please also see Descriptor/Descriptor.h
 
-enum MODE {
+enum USB_MODE {
     NONE_MODE,          // value the same as DEFAULT_DESCRIPTOR_SET
     RESERVED_USB_30,    // value the same as KINGSTON_DESCRIPTOR_SET
     SCSI_MODE,          // value the same as FLASH_20_DESCRIPTOR_SET
@@ -18,7 +18,7 @@ typedef struct _FUZZING_CONTEXT {
     // current seed
     UINT64 Seed;
     // helpfull field to understand with protocol under USB is used now
-    MODE Mode;
+    enum USB_MODE Mode;
     // idex of descriptor set which used at start
     UINT32 DescriptorSetIndx;
     // Should fuzzing descriptor also (default false)

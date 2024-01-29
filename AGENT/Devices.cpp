@@ -141,7 +141,7 @@ void PlugInUSBDevice(HANDLE controllerHandle, USHORT deviceCode, UINT64 seed, BO
     context.OnlyDesc = onlyDesc;
 
     // for simplicity modes have same values as device codes
-    context.Mode = (MODE)deviceCode;
+    context.Mode = (USB_MODE)deviceCode;
     if (!DeviceIoControl(controllerHandle,
         IOCTL_PLUG_USB_DEVICE,
         &context,                   // Ptr to InBuffer
@@ -179,7 +179,7 @@ void PlugInUSBDevice(LPGUID interfaceGuid, USHORT deviceCode) {
             context.OnlyDesc = FALSE;
 
             // for simplicity modes have same values as device codes
-            context.Mode = (MODE)deviceCode;
+            context.Mode = (USB_MODE)deviceCode;
 
             if (!DeviceIoControl(handle,
                 IOCTL_PLUG_USB_DEVICE,
