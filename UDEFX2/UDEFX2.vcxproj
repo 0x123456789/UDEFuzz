@@ -35,9 +35,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="BackChannel.c" />
     <ClCompile Include="Default.c" />
     <ClCompile Include="Descriptor.c" />
